@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <rect width="512" height="512" rx="104" fill="#ffffff"/>
+  <g fill="#006699">
+    <path id="r" d="M256 52 l30 50 h-60 z"/>
+    <use href="#r" transform="rotate(45 256 256)"/>
+    <use href="#r" transform="rotate(90 256 256)"/>
+    <use href="#r" transform="rotate(135 256 256)"/>
+    <use href="#r" transform="rotate(225 256 256)"/>
+    <use href="#r" transform="rotate(270 256 256)"/>
+    <use href="#r" transform="rotate(315 256 256)"/>
+  </g>
+  <path fill="#cc0000" d="M256 128 l62 94 h-38 v168 h-48 V222 h-38 z"/>
+</svg>

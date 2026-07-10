@@ -1,0 +1,97 @@
+# PWA Wikimedia Commons Uploader
+
+A small, fast, framework-free PWA that uploads photos and videos to
+[Wikimedia Commons](https://commons.wikimedia.org/). Works offline, installs to the
+home screen (full screen), survives app/device restarts mid-upload, and runs fully
+in the browser — the only server involved is Wikimedia itself (plus an optional
+conversion endpoint for formats Commons rejects).
+
+**App:** https://vitaly-zdanevich.github.io/PWAWikimediaCommonsUploader/
+
+> You can usually upload only media you created yourself (own work) under a free
+> license. Photos of buildings, monuments and artworks may be restricted in some
+> countries (no or limited [Freedom of Panorama](https://commons.wikimedia.org/wiki/Commons:Freedom_of_panorama)) —
+> check before uploading.
+
+## Features
+
+- OAuth 2.0 login (PKCE, no server), multiple accounts with switching
+- Select many images/videos, or take a photo/video with the camera (iOS and Android)
+- Per-file optional name, description, license and categories; global categories and file-name prefix
+- Category autocompletion (your saved categories + Commons prefix search); a click on an added category chip opens it on Commons
+- 📍 Nearby: finds the closest Commons categories via Wikidata (geolocation), with direction arrow and distance in meters/kilometers, ordered by distance
+- Default license CC BY 4.0 (changeable); prefixes and categories are saved for reuse
+- `IMG_*` file names require a prefix
+- Chunked, resumable uploads: continues after switching apps, going offline, or a device restart (queue and file bytes persist in IndexedDB)
+- Clear red errors from Commons, including links when the file name is taken or an identical file (same SHA1) already exists — after a rename, retry republishes instantly without re-uploading
+- Text-only list with ✅ when uploaded (thumbnails can be enabled in Preferences)
+- After uploading: copy the list of direct file URLs or Commons page URLs (one per line)
+- HEIC / H.264 / H.265 files are sent to a configurable conversion endpoint (AWS Lambda)
+- Dark mode with pure `#000` background (`prefers-color-scheme`)
+- Every upload gets the hidden tracking category `Uploaded by PWA from Vitaly Zdanevich` on the last line of the wikitext
+
+## Setup (one-time)
+
+1. **Register an OAuth 2.0 client**: go to
+   [Special:OAuthConsumerRegistration/propose/oauth2](https://meta.wikimedia.org/wiki/Special:OAuthConsumerRegistration/propose/oauth2)
+   on Meta-Wiki and propose a consumer with:
+   - OAuth protocol: **OAuth 2.0**
+   - **This consumer is for use only by <you>**: leave unchecked if other accounts should log in
+     (note: until an OAuth admin approves the consumer, only the proposing account can use it)
+   - Callback URL: `https://vitaly-zdanevich.github.io/PWAWikimediaCommonsUploader/` (exactly, with the trailing slash)
+   - **Client is confidential: NO** (public client, PKCE)
+   - Grants: *Create, edit, and move pages*, *Upload new files*, *Upload, replace, and move files*
+2. Open the app → ⚙ Preferences → paste the **client ID** (or set `DEFAULT_OAUTH_CLIENT_ID` in `src/config.ts`).
+3. Sign in.
+
+## Conversion endpoint contract (AWS Lambda, to be developed)
+
+The app `POST`s `multipart/form-data` to the URL set in Preferences:
+
+| field      | value                                            |
+| ---------- | ------------------------------------------------ |
+| `file`     | the original file (HEIC/MP4/MOV/…)               |
+| `filename` | desired Commons file name (extension may change) |
+| `text`     | ready wikitext for the file page                 |
+| `comment`  | upload comment                                   |
+| `token`    | the user's OAuth 2 access token (Bearer)         |
+
+The Lambda converts (HEIC→JPEG, H.264/H.265→WebM/VP9), uploads to Commons with the
+token, and replies `200 {"pageUrl": "...", "fileUrl": "..."}` or `{"error": "message"}`.
+
+## Development
+
+```sh
+npm install
+npm run dev        # local dev server
+npm run lint       # eslint
+npm run typecheck  # tsc --noEmit
+npm test           # vitest
+npm run build      # vite build + HTML minification + service worker generation
+npm run icons      # regenerate PNG/ICO icons from public/icons/icon.svg
+```
+
+No runtime dependencies; TypeScript, built with Vite targeting Safari 14+ (works on iOS 15).
+
+## Versioning and deployment
+
+- Every commit bumps `version` in `package.json`: **minor** for a new feature,
+  **patch** for a fix.
+- CI (GitHub Actions) runs lint, typecheck, tests and build on every push;
+  it deploys to GitHub Pages only when the commit changed the version.
+
+## Adding it to Telegram
+
+Yes — this PWA can be attached to an existing Telegram bot as a
+[Mini App](https://core.telegram.org/bots/webapps): in @BotFather use
+*Bot Settings → Menu Button* (or `web_app` inline buttons) and point it to the
+GitHub Pages URL. Caveats: inside Telegram's webview the OAuth redirect works as a
+normal navigation, but storage may be isolated from your regular browser, so you
+sign in once inside Telegram too; iOS Telegram may not keep long uploads running in
+the background as reliably as the installed PWA.
+
+## Notes on iOS
+
+- Install via Safari → Share → *Add to Home Screen* for full-screen mode.
+- iOS suspends background tabs aggressively; if an upload is interrupted, reopen
+  the app — it continues from the last uploaded chunk.
