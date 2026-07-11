@@ -2,11 +2,29 @@
 const CACHE = 'cu-__VERSION__';
 const ASSETS = __PRECACHE__;
 
+// GitHub Pages serves with max-age=600; revalidate so precache/navigations
+// never store a stale deploy (falls back gracefully where unsupported)
+let REVALIDATE;
+try {
+	if (new Request('./', { cache: 'no-cache' }).cache === 'no-cache') REVALIDATE = { cache: 'no-cache' };
+} catch {
+	REVALIDATE = undefined;
+}
+
 self.addEventListener('install', (e) => {
 	e.waitUntil(
 		caches
 			.open(CACHE)
-			.then((c) => c.addAll(ASSETS))
+			.then((c) =>
+				Promise.all(
+					ASSETS.map((u) =>
+						fetch(u, REVALIDATE).then((r) => {
+							if (!r.ok) throw new Error('precache failed: ' + u);
+							return c.put(u, r);
+						}),
+					),
+				),
+			)
 			.then(() => self.skipWaiting()),
 	);
 });
@@ -24,7 +42,7 @@ self.addEventListener('fetch', (e) => {
 	const req = e.request;
 	if (req.method !== 'GET' || new URL(req.url).origin !== location.origin) return;
 	if (req.mode === 'navigate') {
-		e.respondWith(fetch(req).catch(() => caches.match('./')));
+		e.respondWith(fetch(req, REVALIDATE).catch(() => caches.match('./')));
 		return;
 	}
 	e.respondWith(

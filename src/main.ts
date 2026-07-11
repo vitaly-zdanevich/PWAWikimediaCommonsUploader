@@ -1,6 +1,6 @@
 import './style.css';
 import { handleRedirect } from './oauth';
-import { restoreFromDb, resume } from './queue';
+import { entries, isRunning, restoreFromDb, resume } from './queue';
 import { initUi, setStartupError } from './ui/app';
 
 async function init(): Promise<void> {
@@ -26,7 +26,21 @@ async function init(): Promise<void> {
 	});
 	if (navigator.storage?.persist) void navigator.storage.persist().catch(() => undefined);
 	if (import.meta.env.PROD && 'serviceWorker' in navigator) {
-		navigator.serviceWorker.register(import.meta.env.BASE_URL + 'sw.js').catch(() => undefined);
+		// reload once when an update takes over, but never mid-work
+		let hadController = Boolean(navigator.serviceWorker.controller);
+		navigator.serviceWorker.addEventListener('controllerchange', () => {
+			const busy = isRunning() || entries.some((e) => e.status !== 'done' && e.status !== 'error');
+			if (hadController && !busy) location.reload();
+			hadController = true;
+		});
+		navigator.serviceWorker
+			.register(import.meta.env.BASE_URL + 'sw.js', { updateViaCache: 'none' })
+			.then((reg) => {
+				document.addEventListener('visibilitychange', () => {
+					if (!document.hidden) void reg.update().catch(() => undefined);
+				});
+			})
+			.catch(() => undefined);
 	}
 }
 
