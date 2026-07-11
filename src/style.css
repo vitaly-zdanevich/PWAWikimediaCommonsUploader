@@ -41,7 +41,7 @@ body {
 #app {
 	max-width: 720px;
 	margin: 0 auto;
-	padding: 8px 12px 40px;
+	padding: 8px 10px 40px;
 }
 
 header {
@@ -227,11 +227,11 @@ select {
 .rowline {
 	display: flex;
 	align-items: center;
-	gap: 8px;
+	gap: 6px;
 }
 
 .st {
-	min-width: 44px;
+	min-width: 20px;
 	text-align: center;
 	flex-shrink: 0;
 }
@@ -264,7 +264,7 @@ select {
 }
 
 .details {
-	padding: 6px 0 4px 20px;
+	padding: 6px 0 4px;
 }
 
 .copybar {
