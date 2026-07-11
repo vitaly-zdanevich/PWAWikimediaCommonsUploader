@@ -10,16 +10,16 @@ const svg = readFileSync(dir + 'icon.svg');
 const master = await sharp(svg, { density: 288 }).resize(1024, 1024).png().toBuffer();
 
 async function png(size, out, pad = 0) {
-  let buf = await sharp(master).resize(size - pad * 2, size - pad * 2).png().toBuffer();
-  if (pad) {
-    buf = await sharp({ create: { width: size, height: size, channels: 4, background: '#ffffff' } })
-      .composite([{ input: buf }])
-      .png()
-      .toBuffer();
-  }
-  writeFileSync(dir + out, buf);
-  console.log('wrote icons/' + out);
-  return buf;
+	let buf = await sharp(master).resize(size - pad * 2, size - pad * 2).png().toBuffer();
+	if (pad) {
+		buf = await sharp({ create: { width: size, height: size, channels: 4, background: '#ffffff' } })
+			.composite([{ input: buf }])
+			.png()
+			.toBuffer();
+	}
+	writeFileSync(dir + out, buf);
+	console.log('wrote icons/' + out);
+	return buf;
 }
 
 await png(192, 'icon-192.png');
@@ -40,18 +40,18 @@ header.writeUInt16LE(images.length, 4);
 const entries = [];
 let offset = 6 + 16 * images.length;
 images.forEach((buf, i) => {
-  const e = Buffer.alloc(16);
-  e.writeUInt8(sizes[i], 0);
-  e.writeUInt8(sizes[i], 1);
-  e.writeUInt16LE(1, 4); // color planes
-  e.writeUInt16LE(32, 6); // bits per pixel
-  e.writeUInt32LE(buf.length, 8);
-  e.writeUInt32LE(offset, 12);
-  offset += buf.length;
-  entries.push(e);
+	const e = Buffer.alloc(16);
+	e.writeUInt8(sizes[i], 0);
+	e.writeUInt8(sizes[i], 1);
+	e.writeUInt16LE(1, 4); // color planes
+	e.writeUInt16LE(32, 6); // bits per pixel
+	e.writeUInt32LE(buf.length, 8);
+	e.writeUInt32LE(offset, 12);
+	offset += buf.length;
+	entries.push(e);
 });
 writeFileSync(
-  fileURLToPath(new URL('../public/favicon.ico', import.meta.url)),
-  Buffer.concat([header, ...entries, ...images]),
+	fileURLToPath(new URL('../public/favicon.ico', import.meta.url)),
+	Buffer.concat([header, ...entries, ...images]),
 );
 console.log('wrote favicon.ico');

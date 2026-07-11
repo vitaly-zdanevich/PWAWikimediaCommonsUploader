@@ -8,33 +8,33 @@ const pkg = JSON.parse(readFileSync(new URL('../package.json', import.meta.url),
 
 const html = readFileSync(join(dist, 'index.html'), 'utf8');
 const minified = await minify(html, {
-  collapseWhitespace: true,
-  removeComments: true,
-  minifyCSS: true,
-  minifyJS: true,
+	collapseWhitespace: true,
+	removeComments: true,
+	minifyCSS: true,
+	minifyJS: true,
 });
 writeFileSync(join(dist, 'index.html'), minified);
 
 function walk(dir) {
-  const out = [];
-  for (const name of readdirSync(dir)) {
-    const p = join(dir, name);
-    if (statSync(p).isDirectory()) out.push(...walk(p));
-    else out.push(p);
-  }
-  return out;
+	const out = [];
+	for (const name of readdirSync(dir)) {
+		const p = join(dir, name);
+		if (statSync(p).isDirectory()) out.push(...walk(p));
+		else out.push(p);
+	}
+	return out;
 }
 
 const assets = ['./'].concat(
-  walk(dist)
-    .map((p) => './' + relative(dist, p).split('\\').join('/'))
-    .filter((p) => p !== './sw.js'),
+	walk(dist)
+		.map((p) => './' + relative(dist, p).split('\\').join('/'))
+		.filter((p) => p !== './sw.js'),
 );
 
 const template = readFileSync(new URL('../src/sw-template.js', import.meta.url), 'utf8');
 const sw = template
-  .replace('__PRECACHE__', JSON.stringify(assets))
-  .replace('__VERSION__', pkg.version);
+	.replace('__PRECACHE__', JSON.stringify(assets))
+	.replace('__VERSION__', pkg.version);
 writeFileSync(join(dist, 'sw.js'), sw);
 
 console.log(`postbuild: index.html minified, sw.js generated (${assets.length} precached files, v${pkg.version})`);

@@ -22,5 +22,5 @@ export const UPLOAD_COMMENT = `Uploaded by PWA from Vitaly Zdanevich (v${APP_VER
 
 // Extensions Wikimedia Commons rejects: routed to the conversion endpoint (AWS Lambda).
 export const CONVERT_EXTENSIONS = [
-  'heic', 'heif', 'mp4', 'mov', 'm4v', '3gp', 'avi', 'mkv', 'mts', 'm2ts', 'wmv',
+	'heic', 'heif', 'mp4', 'mov', 'm4v', '3gp', 'avi', 'mkv', 'mts', 'm2ts', 'wmv',
 ];
