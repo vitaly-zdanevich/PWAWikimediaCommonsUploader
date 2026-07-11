@@ -23,20 +23,31 @@ export function buildFinalName(prefix: string, customName: string, origName: str
 }
 
 /**
- * Names the Commons title blacklist rejects as meaningless: camera counters,
- * UUID-style photo library names, timestamp-only names.
+ * Names the Commons title blacklist rejects, transliterated from
+ * https://commons.wikimedia.org/wiki/MediaWiki:Titleblacklist ("generic file
+ * names" section). Kept local to avoid a network call per file; if an edge
+ * case slips through, publishing fails with the server's message and Retry
+ * republishes the kept stash after a rename, so nothing is re-uploaded.
  */
 const GENERIC_NAME_PATTERNS = [
-	/^img[_ -]?e?\d/i, // IMG_0001, IMG-20200101, IMG_E0001
-	/^(dsc|dscf|dscn|pict|pxl|mvimg|vid|mov|gopr|fb_img|received|whatsapp image|screenshot)[_ -]?\d/i,
-	/^p\d{7}\b/i, // P1010001
+	/^(mv)?i?mg[p_ -]?e?\d{3}/i, // IMG_0001, IMGP1234, IMG 0767 …, IMG_E001 (Canon, Pentax, phones)
+	/^img[_ -][\da-f]{6,}$/i, // hex suffix form
+	/^(dsc|dscf|dscn|dcp|pict|pxl|vid|mov|gopr|duw|cimg|sdc|pana|hpim|kimg|snv|mvc)[_ -]?\d/i,
+	/^(im|ex)\d{3,}$/i, // HP Photosmart
+	/^p[\da-f]\d{6}/i, // Olympus, Kodak
 	/^dcim\b/i,
-	/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i, // UUID
-	/^\d{8}[_ -]\d{6}/, // 20230101_123456
-	/^\d+$/,
-	/^win_\d{8}\b/i,
-	/^(kakaotalk|wechatimg|picsart|inshot)/i,
+	/^1\d+-\d+(_img)?$/i, // Canon
+	/^dc\d+[sml]$/i, // Kodak
+	/^(test|scan)[\d\s]*$/i,
+	/^file_\d+_/i,
+	/^(whatsapp[ _-](image|video)|wechatimg|kakaotalk|picsart|inshot|robloxscreenshot)/i,
+	/^(fb_img|received|screenshot)[_ -]?\d/i,
+	/^win_\d{8}\b/i, // Windows camera
+	/^(c360|wp)_\d/i,
 	/^s-l\d+$/i, // eBay
+	/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/i, // UUID (iOS photo library)
+	/^\d{8}[_ -]\d{6}/, // 20230101_123456
+	/^\P{L}*$/u, // no letters at all — Commons' catch-all rule
 ];
 
 export function isGenericName(base: string): boolean {

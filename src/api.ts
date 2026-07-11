@@ -99,14 +99,6 @@ export async function searchCategories(query: string): Promise<string[]> {
 	return names.concat(found.map((p) => p.title.replace(/^Category:/, '')));
 }
 
-/** Asks Commons' own title blacklist (authoritative, unlike the local patterns). */
-export async function titleBlacklisted(fileName: string): Promise<string | null> {
-	const json = await apiGet({ action: 'titleblacklist', tbtitle: 'File:' + fileName, tbaction: 'create' });
-	const tb = json.titleblacklist as { result?: string } | undefined;
-	if (tb?.result !== 'blacklisted') return null;
-	return `Commons rejects the file name "${fileName}" as generic or uninformative. Add a prefix or a descriptive name, then retry.`;
-}
-
 export async function titleExists(fileName: string): Promise<boolean> {
 	const json = await apiGet({ action: 'query', titles: 'File:' + fileName });
 	const pages = (json.query as { pages?: Record<string, { missing?: string }> } | undefined)?.pages ?? {};
