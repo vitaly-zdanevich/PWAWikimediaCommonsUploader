@@ -2,8 +2,15 @@ import { bearingArrow, fetchNearbyCategories, formatDistance, type NearbyCategor
 import { clear, el } from './dom';
 import { categoryUrl } from './catinput';
 
-/** Geolocates the user and lists the closest Commons categories from Wikidata (P625 + P373). */
-export function openNearby(o: { has: (c: string) => boolean; add: (c: string) => void }): void {
+/**
+ * Lists the closest Commons categories from Wikidata (P625 + P373), around the
+ * given coordinates (e.g. from photo EXIF) or the device location.
+ */
+export function openNearby(o: {
+	has: (c: string) => boolean;
+	add: (c: string) => void;
+	coords?: { lat: number; lon: number };
+}): void {
 	let radiusKm = 1;
 	let coords: { lat: number; lon: number } | null = null;
 
@@ -77,6 +84,11 @@ export function openNearby(o: { has: (c: string) => boolean; add: (c: string) =>
 
 	document.body.append(overlay);
 	updateWider();
+	if (o.coords) {
+		coords = { ...o.coords };
+		void search();
+		return;
+	}
 	if (!('geolocation' in navigator)) {
 		msg('Geolocation is not available on this device.', true);
 		return;

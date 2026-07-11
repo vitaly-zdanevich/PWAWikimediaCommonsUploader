@@ -24,6 +24,10 @@ export interface Entry {
 	size: number;
 	lastModified: number;
 
+	/** EXIF GPS position, when the photo has one */
+	lat?: number;
+	lon?: number;
+
 	customName: string;
 	description: string;
 	categories: string[];

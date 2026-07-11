@@ -1,3 +1,4 @@
+import { fetchNearbyCategories, formatDistance, type NearbyCategory } from '../geo';
 import { buildFinalName, needsPrefix } from '../naming';
 import { getActiveAccount, getPrefs } from '../prefs';
 import {
@@ -18,6 +19,62 @@ import { openNearby } from './nearby';
 
 let prefix = '';
 let globalCats: string[] = [];
+
+// categories near the photos' EXIF position, proposed as one-tap chips
+let exifSuggestions: NearbyCategory[] = [];
+let exifSuggKey = '';
+let suggRow: HTMLElement | null = null;
+let catInputRef: { refresh(): void } | null = null;
+
+function firstGpsEntry(): Entry | undefined {
+	return entries.find((e) => e.lat !== undefined && e.lon !== undefined);
+}
+
+function addGlobalCat(c: string): void {
+	if (!globalCats.some((x) => x.toLowerCase() === c.toLowerCase())) globalCats = [...globalCats, c];
+	catInputRef?.refresh();
+}
+
+function renderSuggRow(): void {
+	if (!suggRow) return;
+	clear(suggRow);
+	const items = exifSuggestions
+		.filter((s) => !globalCats.some((c) => c.toLowerCase() === s.category.toLowerCase()))
+		.slice(0, 6);
+	suggRow.hidden = items.length === 0;
+	if (!items.length) return;
+	suggRow.append(el('span', { class: 'muted' }, 'Near photo: '));
+	for (const s of items) {
+		suggRow.append(
+			el('button', { type: 'button', class: 'sugg', title: formatDistance(s.distanceM), onclick: () => {
+				addGlobalCat(s.category);
+				renderSuggRow();
+			} }, s.category),
+		);
+	}
+}
+
+async function refreshExifSuggestions(): Promise<void> {
+	const e = firstGpsEntry();
+	if (!e || e.lat === undefined || e.lon === undefined) {
+		exifSuggestions = [];
+		exifSuggKey = '';
+		renderSuggRow();
+		return;
+	}
+	const key = `${e.lat.toFixed(5)},${e.lon.toFixed(5)}`;
+	if (key === exifSuggKey) {
+		renderSuggRow();
+		return;
+	}
+	exifSuggKey = key;
+	try {
+		exifSuggestions = await fetchNearbyCategories(e.lat, e.lon, 1);
+	} catch {
+		exifSuggestions = [];
+	}
+	renderSuggRow();
+}
 
 interface RowRefs {
 	status: HTMLElement;
@@ -203,9 +260,16 @@ export function renderFiles(): HTMLElement {
 
 	const catInput = createCatInput({
 		get: () => globalCats,
-		set: (n) => (globalCats = n),
+		set: (n) => {
+			globalCats = n;
+			renderSuggRow();
+		},
 		placeholder: 'Category for all files…',
 	});
+	catInputRef = catInput;
+	suggRow = el('div', { class: 'suggrow', hidden: true });
+	renderSuggRow();
+	void refreshExifSuggestions();
 
 	validation = el('p', { class: 'err', hidden: true });
 
@@ -261,15 +325,19 @@ export function renderFiles(): HTMLElement {
 			{ class: 'field' },
 			'Categories',
 			catInput.root,
-			el('button', { type: 'button', class: 'btn small', onclick: () =>
+			el('button', { type: 'button', class: 'btn small', onclick: () => {
+				const gps = firstGpsEntry();
 				openNearby({
 					has: (c) => globalCats.some((x) => x.toLowerCase() === c.toLowerCase()),
 					add: (c) => {
-						if (!globalCats.some((x) => x.toLowerCase() === c.toLowerCase())) globalCats = [...globalCats, c];
-						catInput.refresh();
+						addGlobalCat(c);
+						renderSuggRow();
 					},
-				}) }, '📍 Nearby'),
+					coords: gps && gps.lat !== undefined && gps.lon !== undefined ? { lat: gps.lat, lon: gps.lon } : undefined,
+				});
+			} }, '📍 Nearby'),
 		),
+		suggRow,
 		validation,
 		el('ul', { class: 'filelist' }, ...entries.map(renderRow)),
 		uploadBtn,

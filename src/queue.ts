@@ -1,6 +1,7 @@
 import { ApiError, RateLimitError, filePageUrl } from './apierrors';
 import { getCsrfToken, publishStash, titleExists, uploadChunk } from './api';
 import { CHUNK_SIZE, PWA_CATEGORY, UPLOAD_COMMENT } from './config';
+import { readJpegGps } from './exif';
 import { dbAll, dbDelete, dbPut } from './idb';
 import { buildFinalName, requiresConversion } from './naming';
 import { ensureFresh, randomId } from './oauth';
@@ -25,7 +26,7 @@ export function isRunning(): boolean {
 export function addFiles(files: ArrayLike<File>): void {
 	for (let i = 0; i < files.length; i++) {
 		const f = files[i];
-		entries.push({
+		const entry: Entry = {
 			id: `${Date.now().toString(36)}-${randomId(4)}`,
 			seq: ++seq,
 			file: f,
@@ -42,7 +43,16 @@ export function addFiles(files: ArrayLike<File>): void {
 			status: 'new',
 			offset: 0,
 			viaLambda: requiresConversion(f.name),
-		});
+		};
+		entries.push(entry);
+		if (f.type === 'image/jpeg' || /\.jpe?g$/i.test(f.name)) {
+			void readJpegGps(f).then((gps) => {
+				if (!gps) return;
+				entry.lat = gps.lat;
+				entry.lon = gps.lon;
+				onUpdate();
+			});
+		}
 	}
 	onUpdate();
 }

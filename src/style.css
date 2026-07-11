@@ -218,6 +218,22 @@ select {
 	font-size: 13px;
 }
 
+.suggrow {
+	margin: 2px 0 6px;
+}
+
+button.sugg {
+	font: inherit;
+	font-size: 14px;
+	color: var(--fg);
+	background: var(--chip);
+	border: 1px solid var(--line);
+	border-radius: 14px;
+	padding: 4px 10px;
+	margin: 2px 4px 2px 0;
+	cursor: pointer;
+}
+
 .filelist {
 	list-style: none;
 	margin: 12px 0 0;
