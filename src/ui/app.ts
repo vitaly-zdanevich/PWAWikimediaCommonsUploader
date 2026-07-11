@@ -42,7 +42,7 @@ export function rerender(): void {
 	const header = el(
 		'header',
 		{},
-		el('h1', {}, 'Commons Uploader'),
+		el('h1', {}, 'PWA Uploader'),
 		acc && view === 'files' ? el('span', { class: 'muted user' }, acc.username) : null,
 		el('button', { type: 'button', class: 'btn small', 'aria-label': 'Preferences', onclick: () =>
 			showView(view === 'prefs' ? 'files' : 'prefs') }, view === 'prefs' ? '← Back' : '⚙'),

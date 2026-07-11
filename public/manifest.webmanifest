@@ -1,6 +1,6 @@
 {
-	"name": "Wikimedia Commons Uploader",
-	"short_name": "Commons Up",
+	"name": "PWA Uploader",
+	"short_name": "PWA Uploader",
 	"description": "Upload photos and videos to Wikimedia Commons",
 	"id": "./",
 	"start_url": "./",
