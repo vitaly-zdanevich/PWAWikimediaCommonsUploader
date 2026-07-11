@@ -1,4 +1,4 @@
-import { ApiError, describeUploadWarnings, type WarningResult } from './apierrors';
+import { ApiError, RateLimitError, describeUploadWarnings, type WarningResult } from './apierrors';
 import { COMMONS_API } from './config';
 import { ensureFresh } from './oauth';
 import { getAccount } from './prefs';
@@ -20,10 +20,22 @@ async function request(url: string, init: RequestInit, username?: string): Promi
 		headers = await authHeader(username, true);
 		res = await fetch(url, { ...init, headers });
 	}
-	if (!res.ok && res.status !== 400) throw new Error(`Wikimedia Commons HTTP ${res.status}`);
-	const json = (await res.json()) as Json;
-	const err = json.error as { code?: string; info?: string } | undefined;
+	const text = await res.text();
+	let json: Json | undefined;
+	try {
+		json = JSON.parse(text) as Json;
+	} catch {
+		json = undefined;
+	}
+	const err = json?.error as { code?: string; info?: string } | undefined;
+	if (res.status === 429 || err?.code === 'ratelimited') {
+		const ra = Number(res.headers.get('retry-after'));
+		throw new RateLimitError(Number.isFinite(ra) && ra > 0 ? ra : 300);
+	}
 	if (err) throw new ApiError(err.code ?? 'unknown', err.info ?? 'Unknown Wikimedia Commons error');
+	if (!res.ok || !json) {
+		throw new Error(`Wikimedia Commons HTTP ${res.status}${text ? ': ' + text.slice(0, 140) : ''}`);
+	}
 	return json;
 }
 
@@ -72,7 +84,19 @@ export async function searchCategories(query: string): Promise<string[]> {
 		pslimit: '10',
 	});
 	const list = (json.query as { prefixsearch?: { title: string }[] } | undefined)?.prefixsearch ?? [];
-	return list.map((p) => p.title.replace(/^Category:/, ''));
+	const names = list.map((p) => p.title.replace(/^Category:/, ''));
+	if (names.length >= 5) return names;
+	// prefix search is start-anchored; full-text finds "Beaches of Batumi" for "batumi beach"
+	const json2 = await apiGet({
+		action: 'query',
+		list: 'search',
+		srsearch: q,
+		srnamespace: '14',
+		srlimit: '10',
+		srprop: '',
+	});
+	const found = (json2.query as { search?: { title: string }[] } | undefined)?.search ?? [];
+	return names.concat(found.map((p) => p.title.replace(/^Category:/, '')));
 }
 
 export async function titleExists(fileName: string): Promise<boolean> {

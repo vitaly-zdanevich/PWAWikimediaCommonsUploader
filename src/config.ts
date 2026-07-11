@@ -14,7 +14,9 @@ export const DEFAULT_OAUTH_CLIENT_ID = '2260471694b45464c738bf0a5f4fe830';
 
 export const PWA_CATEGORY = 'Uploaded by PWA from Vitaly Zdanevich';
 
-export const CHUNK_SIZE = 4 * 1024 * 1024;
+// Every chunk consumes one hit of the Commons upload rate limit
+// (380 hits / 72 min for regular users), so chunks are large.
+export const CHUNK_SIZE = 16 * 1024 * 1024;
 
 export const APP_VERSION = __APP_VERSION__;
 

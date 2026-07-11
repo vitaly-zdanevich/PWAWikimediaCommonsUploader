@@ -9,6 +9,12 @@ export class ApiError extends Error {
 	}
 }
 
+export class RateLimitError extends Error {
+	constructor(public retryAfterSec: number) {
+		super('Rate limited by Wikimedia Commons (HTTP 429)');
+	}
+}
+
 export function filePageUrl(fileName: string): string {
 	return 'https://commons.wikimedia.org/wiki/File:' + encodeURIComponent(fileName.replace(/ /g, '_'));
 }

@@ -1,4 +1,4 @@
-import { ApiError, filePageUrl } from './apierrors';
+import { ApiError, RateLimitError, filePageUrl } from './apierrors';
 import { getCsrfToken, publishStash, titleExists, uploadChunk } from './api';
 import { CHUNK_SIZE, PWA_CATEGORY, UPLOAD_COMMENT } from './config';
 import { dbAll, dbDelete, dbPut } from './idb';
@@ -133,10 +133,14 @@ async function run(): Promise<void> {
 	}
 }
 
+const sleep = (ms: number) => new Promise<void>((r) => setTimeout(r, ms));
+const rateLimitWaits = new Map<string, number>();
+
 function fail(e: Entry, message: string, links?: Entry['errorLinks']): void {
 	e.status = 'error';
 	e.error = message;
 	e.errorLinks = links;
+	rateLimitWaits.delete(e.id);
 	persist(e);
 	onUpdate(e);
 }
@@ -153,11 +157,28 @@ async function processEntry(e: Entry): Promise<void> {
 		}
 		e.status = 'done';
 		e.progressText = undefined;
+		rateLimitWaits.delete(e.id);
 		persist(e);
 		rememberCategories([...e.globalCats, ...e.categories]);
 		onUpdate(e);
 	} catch (err) {
 		if (err instanceof SkipError) return; // entry already marked failed with a rich message
+		if (err instanceof RateLimitError) {
+			// quota window is long (380 upload hits / 72 min): wait, then the run loop retries
+			const waits = (rateLimitWaits.get(e.id) ?? 0) + 1;
+			rateLimitWaits.set(e.id, waits);
+			if (waits <= 6) {
+				const waitSec = Math.min(Math.max(err.retryAfterSec, 60), 600);
+				e.status = 'pending';
+				e.progressText = `rate-limited, retry in ~${Math.ceil(waitSec / 60)} min`;
+				persist(e);
+				onUpdate(e);
+				await sleep(waitSec * 1000);
+				return;
+			}
+			fail(e, 'Wikimedia Commons rate limit reached (regular users: 380 upload requests per 72 minutes). Retry later.');
+			return;
+		}
 		if (err instanceof ApiError && ['stashfailed', 'invalidsessiondata', 'stasherror'].includes(err.code)) {
 			// the stashed chunks are gone (e.g. expired after a long pause): restart this file
 			e.offset = 0;

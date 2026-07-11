@@ -120,6 +120,13 @@ normal navigation, but storage may be isolated from your regular browser, so you
 sign in once inside Telegram too; iOS Telegram may not keep long uploads running in
 the background as reliably as the installed PWA.
 
+## Rate limits
+
+Commons allows regular users **380 upload API requests per 72 minutes** (each 16 MB
+chunk and each publish counts as one). When throttled (HTTP 429), the app pauses the
+queue and retries automatically; large batches may take a while. Users in the
+`autopatrolled` group on Commons are effectively unlimited.
+
 ## Notes on iOS
 
 - Install via Safari → Share → *Add to Home Screen* for full-screen mode.

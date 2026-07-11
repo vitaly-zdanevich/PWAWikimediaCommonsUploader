@@ -78,12 +78,13 @@ export function createCatInput(o: {
 			seen.add(k);
 			merged.push(c);
 		};
+		let searchFailed = false;
 		for (const c of getPrefs().categories) if (!q || c.toLowerCase().includes(q)) push(c);
 		if (q.length >= 2) {
 			try {
 				for (const c of await searchCategories(input.value)) push(c);
 			} catch {
-				// offline: history suggestions only
+				searchFailed = true; // offline or rate-limited: history suggestions only
 			}
 			if (mySeq !== reqSeq) return;
 		}
@@ -98,7 +99,8 @@ export function createCatInput(o: {
 				}, c),
 			);
 		}
-		drop.hidden = merged.length === 0;
+		if (searchFailed) drop.append(el('div', { class: 'dropnote muted' }, 'Commons search unavailable (offline or rate-limited)'));
+		drop.hidden = merged.length === 0 && !searchFailed;
 	}
 
 	input.addEventListener('input', () => {

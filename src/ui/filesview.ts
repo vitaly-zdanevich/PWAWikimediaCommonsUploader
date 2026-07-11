@@ -34,7 +34,7 @@ let validation: HTMLElement | null = null;
 function statusText(e: Entry): string {
 	switch (e.status) {
 		case 'new': return '·';
-		case 'pending': return '🕓';
+		case 'pending': return e.progressText ? `🕓 ${e.progressText}` : '🕓';
 		case 'uploading': return `⏳ ${e.progressText ?? ''}`;
 		case 'done': return '✅';
 		case 'error': return '❌';

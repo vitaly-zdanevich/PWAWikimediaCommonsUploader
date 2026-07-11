@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { ApiError, describeUploadWarnings, filePageUrl } from '../src/apierrors';
+import { ApiError, RateLimitError, describeUploadWarnings, filePageUrl } from '../src/apierrors';
 
 describe('filePageUrl', () => {
 	it('links to the file page with underscores', () => {
@@ -33,5 +33,11 @@ describe('ApiError', () => {
 		const e = new ApiError('badtoken', 'Invalid CSRF token.');
 		expect(e.code).toBe('badtoken');
 		expect(e.message).toBe('badtoken: Invalid CSRF token.');
+	});
+});
+
+describe('RateLimitError', () => {
+	it('keeps the retry delay', () => {
+		expect(new RateLimitError(300).retryAfterSec).toBe(300);
 	});
 });
