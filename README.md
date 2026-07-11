@@ -48,6 +48,16 @@ conversion endpoint for formats Commons rejects).
      the setting cannot be changed afterwards — you would have to register a new consumer.
      After submitting, only the **client ID** matters; if a client secret is also displayed,
      ignore it.
+   - Allowed OAuth2 grant types — check:
+     - Authorization code
+     - Refresh token
+
+     *Authorization code* is the login flow itself (with PKCE). *Refresh token* is needed
+     because access tokens expire after about 4 hours and the app refreshes them silently —
+     otherwise you would sign in again every 4 hours and interrupted uploads could not resume
+     unattended. *Client credentials* stays unchecked: it is a machine-to-machine flow where
+     the app itself authenticates with a client secret (confidential clients only); this app
+     always acts as the signed-in user.
    - Applicable grants — check exactly these three, nothing more:
      - Basic rights
      - Create, edit, and move pages
