@@ -345,6 +345,11 @@ export function renderFiles(): HTMLElement {
 						addGlobalCat(c);
 						renderSuggRow();
 					},
+					remove: (c) => {
+						globalCats = globalCats.filter((x) => x.toLowerCase() !== c.toLowerCase());
+						catInputRef?.refresh();
+						renderSuggRow();
+					},
 					coords: gps && gps.lat !== undefined && gps.lon !== undefined ? { lat: gps.lat, lon: gps.lon } : undefined,
 				});
 			} }, '📍 Nearby'),

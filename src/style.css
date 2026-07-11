@@ -7,6 +7,7 @@
 	--accent: #06c;
 	--accent-fg: #ffffff;
 	--err: #cc0000;
+	--ok: #0a7f2e;
 	--chip: #eaecf0;
 }
 
@@ -18,6 +19,7 @@
 		--line: #333;
 		--accent: #3b82f6;
 		--err: #ff6b6b;
+		--ok: #34c759;
 		--chip: #1c1f24;
 	}
 }
@@ -133,8 +135,9 @@ button.linklike {
 	overflow-wrap: anywhere;
 }
 
-button.linklike.added::before {
-	content: '✓ ';
+button.linklike.added {
+	font-weight: 700;
+	color: var(--ok);
 }
 
 input[type='text'],

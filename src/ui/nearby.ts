@@ -9,6 +9,7 @@ import { categoryUrl } from './catinput';
 export function openNearby(o: {
 	has: (c: string) => boolean;
 	add: (c: string) => void;
+	remove: (c: string) => void;
 	coords?: { lat: number; lon: number };
 }): void {
 	let radiusKm = 1;
@@ -50,8 +51,13 @@ export function openNearby(o: {
 			type: 'button',
 			class: 'linklike' + (o.has(it.category) ? ' added' : ''),
 			onclick: () => {
-				o.add(it.category);
-				btn.classList.add('added');
+				if (o.has(it.category)) {
+					o.remove(it.category);
+					btn.classList.remove('added');
+				} else {
+					o.add(it.category);
+					btn.classList.add('added');
+				}
 			},
 		}, it.category);
 		return el(
