@@ -39,6 +39,9 @@ conversion endpoint for formats Commons rejects).
    - **This consumer is for use only by <you>**: leave unchecked if other accounts should log in
      (note: until an OAuth admin approves the consumer, only the proposing account can use it)
    - Callback URL: `https://vitaly-zdanevich.github.io/PWAWikimediaCommonsUploader/` (exactly, with the trailing slash)
+   - Applicable project: restricting the consumer to `commons.wikimedia.org` is fine and is
+     the least-privilege choice — the app talks only to Commons (login still happens via
+     Meta, which works regardless of this restriction)
    - **Client is confidential: leave unchecked.** This PWA is a "web app without a server
      component": it runs entirely in your browser from GitHub Pages, so there is nowhere to
      store a client secret — any secret shipped in the JavaScript would be public anyway.

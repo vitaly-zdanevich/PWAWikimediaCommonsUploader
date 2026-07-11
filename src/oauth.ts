@@ -60,25 +60,8 @@ async function tokenRequest(fields: Record<string, string>): Promise<TokenRespon
 	return json;
 }
 
-async function fetchUsername(accessToken: string): Promise<string> {
-	const res = await fetch(`${OAUTH_BASE}/resource/profile`, {
-		headers: { Authorization: `Bearer ${accessToken}`, Accept: 'application/json' },
-	});
-	const body = await res.text();
-	if (res.ok) {
-		try {
-			const name = (JSON.parse(body) as { username?: string }).username;
-			if (name) return name;
-		} catch {
-			// fall through to the detailed error
-		}
-	}
-	throw new Error(`Could not read the user name for this login (HTTP ${res.status}: ${body.slice(0, 160)})`);
-}
-
-/** Uploads go to Commons, so the token must be accepted there too — fail early if not. */
-async function assertCommonsAuth(accessToken: string, username: string): Promise<void> {
-	let detail = '';
+/** Username as Commons sees it, or null (failure detail pushed to `details`). */
+async function commonsUsername(accessToken: string, details: string[]): Promise<string | null> {
 	try {
 		const res = await fetch(`${COMMONS_API}?action=query&meta=userinfo&format=json&origin=*`, {
 			headers: { Authorization: `Bearer ${accessToken}` },
@@ -87,16 +70,48 @@ async function assertCommonsAuth(accessToken: string, username: string): Promise
 		if (res.ok) {
 			const info = (JSON.parse(body) as { query?: { userinfo?: { name?: string; anon?: string } } })
 				.query?.userinfo;
-			if (info?.name && info.anon === undefined) return;
+			if (info?.name && info.anon === undefined) return info.name;
 		}
-		detail = `HTTP ${res.status}: ${body.slice(0, 160)}`;
+		details.push(`Commons HTTP ${res.status}: ${body.slice(0, 160)}`);
 	} catch (e) {
-		detail = e instanceof Error ? e.message : String(e);
+		details.push('Commons: ' + (e instanceof Error ? e.message : String(e)));
 	}
-	throw new Error(
-		`Signed in as ${username}, but commons.wikimedia.org did not accept the token (${detail}). ` +
-			'Check that the OAuth consumer applies to all projects, not a single wiki.',
-	);
+	return null;
+}
+
+async function metaUsername(accessToken: string, details: string[]): Promise<string | null> {
+	try {
+		const res = await fetch(`${OAUTH_BASE}/resource/profile`, {
+			headers: { Authorization: `Bearer ${accessToken}`, Accept: 'application/json' },
+		});
+		const body = await res.text();
+		if (res.ok) {
+			const name = (JSON.parse(body) as { username?: string }).username;
+			if (name) return name;
+		}
+		details.push(`Meta profile HTTP ${res.status}: ${body.slice(0, 160)}`);
+	} catch (e) {
+		details.push('Meta profile: ' + (e instanceof Error ? e.message : String(e)));
+	}
+	return null;
+}
+
+/**
+ * Uploads go to Commons, so Commons must recognize the token — this also keeps
+ * consumers that are restricted to Commons working. Meta's profile endpoint is
+ * only a fallback to name the user in the error message.
+ */
+async function fetchUsername(accessToken: string): Promise<string> {
+	const details: string[] = [];
+	const name = await commonsUsername(accessToken, details);
+	if (name) return name;
+	const metaName = await metaUsername(accessToken, details);
+	if (metaName) {
+		throw new Error(
+			`Signed in as ${metaName}, but commons.wikimedia.org did not accept the token (${details.join('; ')})`,
+		);
+	}
+	throw new Error(`Could not read the user name for this login. ${details.join('; ')}`);
 }
 
 function toAccount(username: string, t: TokenResponse): Account {
@@ -125,9 +140,7 @@ export async function handleRedirect(): Promise<Account | null> {
 		client_id: clientId(),
 		code_verifier: verifier,
 	});
-	const username = await fetchUsername(tokens.access_token ?? '');
-	await assertCommonsAuth(tokens.access_token ?? '', username);
-	const acc = toAccount(username, tokens);
+	const acc = toAccount(await fetchUsername(tokens.access_token ?? ''), tokens);
 	upsertAccount(acc);
 	return acc;
 }
