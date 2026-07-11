@@ -40,7 +40,15 @@ conversion endpoint for formats Commons rejects).
      (note: until an OAuth admin approves the consumer, only the proposing account can use it)
    - Callback URL: `https://vitaly-zdanevich.github.io/PWAWikimediaCommonsUploader/` (exactly, with the trailing slash)
    - **Client is confidential: NO** (public client, PKCE)
-   - Grants: *Create, edit, and move pages*, *Upload new files*, *Upload, replace, and move files*
+   - Applicable grants — check exactly these three, nothing more:
+     - Basic rights
+     - Create, edit, and move pages
+     - Upload new files
+
+   "Create, edit, and move pages" is required because publishing an upload creates the
+   file description page (`createpage`/`edit`). "Upload, replace, and move files" is **not**
+   needed: the app never overwrites or moves existing files — a taken name or duplicate
+   is reported as an error instead.
 2. Open the app → ⚙ Preferences → paste the **client ID** (or set `DEFAULT_OAUTH_CLIENT_ID` in `src/config.ts`).
 3. Sign in.
 
