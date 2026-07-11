@@ -12,7 +12,7 @@ const master = await sharp(svg, { density: 288 }).resize(1024, 1024).png().toBuf
 async function png(size, out, pad = 0) {
 	let buf = await sharp(master).resize(size - pad * 2, size - pad * 2).png().toBuffer();
 	if (pad) {
-		buf = await sharp({ create: { width: size, height: size, channels: 4, background: '#ffffff' } })
+		buf = await sharp({ create: { width: size, height: size, channels: 4, background: '#000000' } })
 			.composite([{ input: buf }])
 			.png()
 			.toBuffer();
