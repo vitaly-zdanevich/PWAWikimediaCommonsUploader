@@ -34,6 +34,9 @@ const GENERIC_NAME_PATTERNS = [
 	/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i, // UUID
 	/^\d{8}[_ -]\d{6}/, // 20230101_123456
 	/^\d+$/,
+	/^win_\d{8}\b/i,
+	/^(kakaotalk|wechatimg|picsart|inshot)/i,
+	/^s-l\d+$/i, // eBay
 ];
 
 export function isGenericName(base: string): boolean {

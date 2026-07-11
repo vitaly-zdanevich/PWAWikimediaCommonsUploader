@@ -1,5 +1,5 @@
 import { ApiError, RateLimitError, filePageUrl } from './apierrors';
-import { getCsrfToken, publishStash, titleExists, uploadChunk } from './api';
+import { getCsrfToken, publishStash, titleBlacklisted, titleExists, uploadChunk } from './api';
 import { CHUNK_SIZE, PWA_CATEGORY, UPLOAD_COMMENT } from './config';
 import { readJpegGps } from './exif';
 import { dbAll, dbDelete, dbPut } from './idb';
@@ -219,11 +219,20 @@ async function commonsUpload(e: Entry): Promise<void> {
 
 	if (!stashed) {
 		if (!e.file) throw new Error('The file data is no longer available; remove and select it again');
-		if (!e.filekey && (await titleExists(e.finalName))) {
-			fail(e, 'A file with this name already exists. Please rename your file and retry.', [
-				{ text: e.finalName, href: filePageUrl(e.finalName) },
-			]);
-			throw new SkipError();
+		if (!e.filekey) {
+			// server-side checks before spending upload quota; on network failure
+			// the publish step still enforces both
+			const blocked = await titleBlacklisted(e.finalName).catch(() => null);
+			if (blocked) {
+				fail(e, blocked);
+				throw new SkipError();
+			}
+			if (await titleExists(e.finalName)) {
+				fail(e, 'A file with this name already exists. Please rename your file and retry.', [
+					{ text: e.finalName, href: filePageUrl(e.finalName) },
+				]);
+				throw new SkipError();
+			}
 		}
 		await getCsrfToken(e.username);
 		while (e.offset < e.size) {
