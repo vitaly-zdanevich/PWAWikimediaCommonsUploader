@@ -30,7 +30,7 @@ async function request(url: string, init: RequestInit, username?: string): Promi
 // Cross-origin rules of api.php: origin=* is anonymous BY DESIGN (any session is
 // dropped); authenticated CORS requires crossorigin=1 + the Authorization header.
 export function apiGet(params: Record<string, string>, username?: string): Promise<Json> {
-	const cors = username ? { crossorigin: '1' } : { origin: '*' };
+	const cors: Record<string, string> = username ? { crossorigin: '1' } : { origin: '*' };
 	const q = new URLSearchParams({ format: 'json', ...cors, ...params });
 	return request(`${COMMONS_API}?${q}`, { method: 'GET' }, username);
 }
