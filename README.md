@@ -22,7 +22,8 @@ conversion endpoint for formats Commons rejects).
 - 📍 Nearby: finds the closest Commons categories via Wikidata (geolocation), with direction arrow and distance in meters/kilometers, ordered by distance
 - Photos with EXIF GPS automatically propose the closest categories as one-tap chips, and 📍 Nearby uses the photo location instead of the device location when available
 - Default license CC BY 4.0 (changeable); prefixes and categories are saved for reuse
-- `IMG_*` file names require a prefix
+- Generic file names that Commons rejects (`IMG_*`, `DSC*`, `PXL_*`, UUID-style
+  `05998DD7-…`, `20230101_123456`, digits-only, …) require a prefix
 - Chunked, resumable uploads: continues after switching apps, going offline, or a device restart (queue and file bytes persist in IndexedDB)
 - Clear red errors from Commons, including links when the file name is taken or an identical file (same SHA1) already exists — after a rename, retry republishes instantly without re-uploading
 - Text-only list with ✅ when uploaded (thumbnails can be enabled in Preferences)

@@ -31,12 +31,27 @@ describe('needsPrefix', () => {
 		expect(needsPrefix('', '', 'IMG_0001.jpg')).toBe(true);
 		expect(needsPrefix('', '', 'img_0001.jpg')).toBe(true);
 	});
-	it('is satisfied by a prefix or a custom name', () => {
+	it('requires a prefix for other generic names Commons rejects', () => {
+		expect(needsPrefix('', '', '05998DD7-852F-40BF-BCE9-EB6BB9AD7D1B.jpeg')).toBe(true);
+		expect(needsPrefix('', '', 'DSC_0042.JPG')).toBe(true);
+		expect(needsPrefix('', '', 'PXL_20230101_123456789.jpg')).toBe(true);
+		expect(needsPrefix('', '', 'P1010001.jpg')).toBe(true);
+		expect(needsPrefix('', '', '20230101_123456.jpg')).toBe(true);
+		expect(needsPrefix('', '', '12345678.jpg')).toBe(true);
+		expect(needsPrefix('', '', 'Screenshot 2023-01-01.png')).toBe(true);
+	});
+	it('is satisfied by a prefix or a descriptive custom name', () => {
 		expect(needsPrefix('Batumi ', '', 'IMG_0001.jpg')).toBe(false);
 		expect(needsPrefix('', 'Nice sunset', 'IMG_0001.jpg')).toBe(false);
+		expect(needsPrefix('Batumi ', '', '05998DD7-852F-40BF-BCE9-EB6BB9AD7D1B.jpeg')).toBe(false);
 	});
-	it('does not apply to normal names', () => {
+	it('still applies when the custom name itself is generic', () => {
+		expect(needsPrefix('', 'IMG_9999', 'photo.jpg')).toBe(true);
+	});
+	it('does not apply to descriptive names', () => {
 		expect(needsPrefix('', '', 'sunset.jpg')).toBe(false);
+		expect(needsPrefix('', '', 'Batumi boulevard at night.jpg')).toBe(false);
+		expect(needsPrefix('', '', '2023 Batumi flowers.jpg')).toBe(false);
 	});
 });
 
