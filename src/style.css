@@ -24,6 +24,8 @@
 
 * {
 	box-sizing: border-box;
+	/* no double-tap zoom on iOS; scrolling and pinch zoom keep working */
+	touch-action: manipulation;
 }
 
 html,
