@@ -36,8 +36,8 @@ describe('bearingArrow', () => {
 });
 
 describe('formatDistance', () => {
-	it('shows meters and kilometers', () => {
-		expect(formatDistance(537)).toBe('537 m / 0.54 km');
-		expect(formatDistance(12345)).toBe('12345 m / 12.3 km');
+	it('shows meters only', () => {
+		expect(formatDistance(537)).toBe('537 m');
+		expect(formatDistance(12345)).toBe('12345 m');
 	});
 });

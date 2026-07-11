@@ -27,8 +27,7 @@ export function bearingArrow(deg: number): string {
 }
 
 export function formatDistance(m: number): string {
-	const km = m / 1000;
-	return `${Math.round(m)} m / ${km.toFixed(km < 10 ? 2 : 1)} km`;
+	return `${Math.round(m)} m`;
 }
 
 export interface NearbyCategory {

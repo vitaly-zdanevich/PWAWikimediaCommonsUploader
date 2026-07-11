@@ -19,7 +19,7 @@ conversion endpoint for formats Commons rejects).
 - Select many images/videos, or take a photo/video with the camera (iOS and Android)
 - Per-file optional name, description, license and categories; global categories and file-name prefix
 - Category autocompletion (your saved categories + Commons prefix search); a click on an added category chip opens it on Commons
-- 📍 Nearby: finds the closest Commons categories via Wikidata (geolocation), with direction arrow and distance in meters/kilometers, ordered by distance
+- 📍 Nearby: finds the closest Commons categories via Wikidata (geolocation), with direction arrow and distance in meters, ordered by distance
 - Photos with EXIF GPS automatically propose the closest categories as one-tap chips, and 📍 Nearby uses the photo location instead of the device location when available
 - Default license CC BY 4.0 (changeable); prefixes and categories are saved for reuse
 - Generic file names that Commons rejects (`IMG_*`, `DSC*`, `PXL_*`, UUID-style
