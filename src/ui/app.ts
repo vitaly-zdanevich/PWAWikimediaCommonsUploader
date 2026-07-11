@@ -57,7 +57,7 @@ export function rerender(): void {
 		const dbgToken = sessionStorage.getItem('cu_debug_token');
 		if (dbgToken) {
 			const cmd =
-				`curl -s 'https://commons.wikimedia.org/w/api.php?action=query&meta=userinfo&format=json&origin=*' -H 'Authorization: Bearer ${dbgToken}'; echo; ` +
+				`curl -s 'https://commons.wikimedia.org/w/api.php?action=query&meta=userinfo&format=json&crossorigin=1' -H 'Authorization: Bearer ${dbgToken}'; echo; ` +
 				`curl -s 'https://commons.wikimedia.org/w/api.php?action=query&meta=userinfo&format=json' -H 'Authorization: Bearer ${dbgToken}'`;
 			const btn = el('button', { type: 'button', class: 'btn small', onclick: () => {
 				void navigator.clipboard.writeText(cmd).then(() => (btn.textContent = '✓ Copied'));

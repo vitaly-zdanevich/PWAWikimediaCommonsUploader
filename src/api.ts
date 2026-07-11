@@ -27,8 +27,11 @@ async function request(url: string, init: RequestInit, username?: string): Promi
 	return json;
 }
 
+// Cross-origin rules of api.php: origin=* is anonymous BY DESIGN (any session is
+// dropped); authenticated CORS requires crossorigin=1 + the Authorization header.
 export function apiGet(params: Record<string, string>, username?: string): Promise<Json> {
-	const q = new URLSearchParams({ format: 'json', origin: '*', ...params });
+	const cors = username ? { crossorigin: '1' } : { origin: '*' };
+	const q = new URLSearchParams({ format: 'json', ...cors, ...params });
 	return request(`${COMMONS_API}?${q}`, { method: 'GET' }, username);
 }
 
@@ -41,7 +44,7 @@ export function apiPost(
 	fd.set('format', 'json');
 	for (const [k, v] of Object.entries(fields)) fd.set(k, v);
 	if (blob) fd.set(blob.name, blob.data, 'chunk.bin');
-	return request(`${COMMONS_API}?origin=*`, { method: 'POST', body: fd }, username);
+	return request(`${COMMONS_API}?crossorigin=1`, { method: 'POST', body: fd }, username);
 }
 
 const csrfCache = new Map<string, string>();

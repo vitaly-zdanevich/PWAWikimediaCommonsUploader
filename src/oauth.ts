@@ -63,7 +63,8 @@ async function tokenRequest(fields: Record<string, string>): Promise<TokenRespon
 /** Username as Commons sees it, or null (failure detail pushed to `details`). */
 async function commonsUsername(accessToken: string, details: string[]): Promise<string | null> {
 	try {
-		const res = await fetch(`${COMMONS_API}?action=query&meta=userinfo&format=json&origin=*`, {
+		// crossorigin=1, not origin=* — the latter is anonymous by design
+		const res = await fetch(`${COMMONS_API}?action=query&meta=userinfo&format=json&crossorigin=1`, {
 			headers: { Authorization: `Bearer ${accessToken}` },
 		});
 		const body = await res.text();
