@@ -39,7 +39,15 @@ conversion endpoint for formats Commons rejects).
    - **This consumer is for use only by <you>**: leave unchecked if other accounts should log in
      (note: until an OAuth admin approves the consumer, only the proposing account can use it)
    - Callback URL: `https://vitaly-zdanevich.github.io/PWAWikimediaCommonsUploader/` (exactly, with the trailing slash)
-   - **Client is confidential: NO** (public client, PKCE)
+   - **Client is confidential: leave unchecked.** This PWA is a "web app without a server
+     component": it runs entirely in your browser from GitHub Pages, so there is nowhere to
+     store a client secret — any secret shipped in the JavaScript would be public anyway.
+     Instead of a secret the app uses PKCE (`code_challenge` at login, `code_verifier` at the
+     token exchange). If you check it by mistake, the token endpoint will require a
+     `client_secret` the app never sends, login will fail with an "invalid client" error, and
+     the setting cannot be changed afterwards — you would have to register a new consumer.
+     After submitting, only the **client ID** matters; if a client secret is also displayed,
+     ignore it.
    - Applicable grants — check exactly these three, nothing more:
      - Basic rights
      - Create, edit, and move pages
