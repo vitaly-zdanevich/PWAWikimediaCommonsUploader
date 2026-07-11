@@ -33,7 +33,10 @@ function readJson<T>(key: string, fallback: T): T {
 }
 
 export function getPrefs(): Prefs {
-	return readJson(PREFS_KEY, defaults);
+	const p = readJson(PREFS_KEY, defaults);
+	// an empty saved value must not mask the built-in client ID
+	if (!p.clientId) p.clientId = DEFAULT_OAUTH_CLIENT_ID;
+	return p;
 }
 
 export function savePrefs(patch: Partial<Prefs>): Prefs {
