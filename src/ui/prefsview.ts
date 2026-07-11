@@ -175,5 +175,6 @@ export function renderPrefs(): HTMLElement {
 	root.append(section('Last 10 commits', commits));
 
 	root.append(el('p', { class: 'muted' }, `Version ${APP_VERSION}`));
+	root.append(el('p', { class: 'muted' }, 'Thanks for preserving the history'));
 	return root;
 }

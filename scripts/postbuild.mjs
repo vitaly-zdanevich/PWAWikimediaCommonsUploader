@@ -28,7 +28,8 @@ function walk(dir) {
 const assets = ['./'].concat(
 	walk(dist)
 		.map((p) => './' + relative(dist, p).split('\\').join('/'))
-		.filter((p) => p !== './sw.js'),
+		// splash screens are read only by iOS at add-to-home-screen time
+		.filter((p) => p !== './sw.js' && !p.includes('/splash-')),
 );
 
 const template = readFileSync(new URL('../src/sw-template.js', import.meta.url), 'utf8');

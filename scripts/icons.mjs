@@ -28,6 +28,37 @@ await png(180, 'apple-touch-icon.png');
 // maskable: same art inside the safe zone
 await png(512, 'icon-maskable-512.png', 60);
 
+// iOS launch screens: black with the icon centered; sizes are captured when the
+// app is added to the home screen, so re-add after changing these.
+// [pixelW, pixelH, dpr, deviceW, deviceH]
+const SPLASH = [
+	[640, 1136, 2, 320, 568], // SE 1
+	[750, 1334, 2, 375, 667], // 6/7/8/SE 2-3
+	[1242, 2208, 3, 414, 736], // 6+/7+/8+
+	[1125, 2436, 3, 375, 812], // X/XS/11 Pro/12-13 mini
+	[828, 1792, 2, 414, 896], // XR/11
+	[1242, 2688, 3, 414, 896], // XS Max/11 Pro Max
+	[1170, 2532, 3, 390, 844], // 12/13/14
+	[1284, 2778, 3, 428, 926], // 12-13 Pro Max/14 Plus
+	[1179, 2556, 3, 393, 852], // 14 Pro/15/16
+	[1290, 2796, 3, 430, 932], // 14 Pro Max/15-16 Plus
+	[1536, 2048, 2, 768, 1024], // iPad 9.7"
+	[1620, 2160, 2, 810, 1080], // iPad 10.2"
+	[1668, 2388, 2, 834, 1194], // iPad Pro 11"
+	[2048, 2732, 2, 1024, 1366], // iPad Pro 12.9"
+];
+
+for (const [w, h] of SPLASH) {
+	const logoSize = Math.round(Math.min(w, h) * 0.3);
+	const logo = await sharp(master).resize(logoSize, logoSize).png().toBuffer();
+	const buf = await sharp({ create: { width: w, height: h, channels: 4, background: '#000000' } })
+		.composite([{ input: logo }])
+		.png()
+		.toBuffer();
+	writeFileSync(dir + `splash-${w}x${h}.png`, buf);
+	console.log(`wrote icons/splash-${w}x${h}.png`);
+}
+
 // favicon.ico: ICO container holding PNG-encoded 16px and 32px images
 const sizes = [16, 32];
 const images = [];
