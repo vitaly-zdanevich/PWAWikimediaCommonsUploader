@@ -46,8 +46,9 @@ conversion endpoint for formats Commons rejects).
      token exchange). If you check it by mistake, the token endpoint will require a
      `client_secret` the app never sends, login will fail with an "invalid client" error, and
      the setting cannot be changed afterwards — you would have to register a new consumer.
-     After submitting, only the **client ID** matters; if a client secret is also displayed,
-     ignore it.
+     After submitting, only the **client ID** matters — Meta-Wiki shows it using OAuth 1.0a
+     wording as the "consumer key" (or "client application key"). The "consumer secret"
+     displayed next to it is the client secret; ignore it.
    - Allowed OAuth2 grant types — check:
      - Authorization code
      - Refresh token
