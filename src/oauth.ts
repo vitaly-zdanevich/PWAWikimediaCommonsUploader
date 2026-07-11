@@ -105,6 +105,8 @@ async function fetchUsername(accessToken: string): Promise<string> {
 	const details: string[] = [];
 	const name = await commonsUsername(accessToken, details);
 	if (name) return name;
+	// keep the token available for the "Copy diagnostic command" button
+	sessionStorage.setItem('cu_debug_token', accessToken);
 	const metaName = await metaUsername(accessToken, details);
 	if (metaName) {
 		throw new Error(

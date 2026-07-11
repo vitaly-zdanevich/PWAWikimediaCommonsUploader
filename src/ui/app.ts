@@ -51,7 +51,21 @@ export function rerender(): void {
 	if (view === 'prefs') main = renderPrefs();
 	else if (!getAccountsState().list.length) main = renderLogin();
 	else main = renderFiles();
-	clear(app).append(header, startupError ? el('p', { class: 'err' }, startupError) : '', main);
+	let errNode: HTMLElement | null = null;
+	if (startupError) {
+		errNode = el('div', { class: 'err' }, startupError);
+		const dbgToken = sessionStorage.getItem('cu_debug_token');
+		if (dbgToken) {
+			const cmd =
+				`curl -s 'https://commons.wikimedia.org/w/api.php?action=query&meta=userinfo&format=json&origin=*' -H 'Authorization: Bearer ${dbgToken}'; echo; ` +
+				`curl -s 'https://commons.wikimedia.org/w/api.php?action=query&meta=userinfo&format=json' -H 'Authorization: Bearer ${dbgToken}'`;
+			const btn = el('button', { type: 'button', class: 'btn small', onclick: () => {
+				void navigator.clipboard.writeText(cmd).then(() => (btn.textContent = '✓ Copied'));
+			} }, 'Copy diagnostic command');
+			errNode.append(' ', btn);
+		}
+	}
+	clear(app).append(header, errNode ?? '', main);
 	startupError = '';
 }
 
