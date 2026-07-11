@@ -113,9 +113,13 @@ export function startUploads(username: string, prefix: string, globalCats: strin
 	void run();
 }
 
-export function retryEntry(id: string): void {
+/** Retry honors the CURRENT form values (e.g. a corrected prefix), not the old snapshot. */
+export function retryEntry(id: string, snap: { prefix: string; globalCats: string[] }): void {
 	const e = entries.find((x) => x.id === id);
 	if (!e || e.status !== 'error') return;
+	e.prefix = snap.prefix;
+	e.globalCats = dedupeCategories(snap.globalCats);
+	e.finalName = undefined;
 	e.status = 'pending';
 	e.error = undefined;
 	e.errorLinks = undefined;

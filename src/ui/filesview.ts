@@ -99,7 +99,9 @@ function statusText(e: Entry): string {
 }
 
 function displayName(e: Entry): string {
-	return e.finalName ?? buildFinalName(prefix, e.customName, e.origName);
+	// error rows preview with the live prefix — that is what Retry will upload
+	if (e.status !== 'error' && e.finalName) return e.finalName;
+	return buildFinalName(prefix, e.customName, e.origName);
 }
 
 function setName(refs: RowRefs, e: Entry): void {
@@ -114,7 +116,17 @@ function setError(refs: RowRefs, e: Entry): void {
 	if (!e.error) return;
 	refs.err.append(e.error);
 	for (const l of e.errorLinks ?? []) refs.err.append(' ', el('a', { href: l.href, target: '_blank', rel: 'noopener' }, l.text));
-	refs.err.append(' ', el('button', { type: 'button', class: 'btn small', onclick: () => retryEntry(e.id) }, 'Retry'));
+	refs.err.append(' ', el('button', { type: 'button', class: 'btn small', onclick: () => {
+		if (needsPrefix(prefix, e.customName, e.origName)) {
+			if (validation) {
+				validation.textContent = `A file name prefix is required for: ${e.origName}`;
+				validation.hidden = false;
+			}
+			return;
+		}
+		if (validation) validation.hidden = true;
+		retryEntry(e.id, { prefix, globalCats });
+	} }, 'Retry'));
 }
 
 function fmtSize(bytes: number): string {
@@ -253,7 +265,7 @@ export function renderFiles(): HTMLElement {
 			prefix = prefixInput.value;
 			for (const e of entries) {
 				const refs = rowRefs.get(e.id);
-				if (refs && (e.status === 'new' || e.status === 'pending')) setName(refs, e);
+				if (refs && (e.status === 'new' || e.status === 'pending' || e.status === 'error')) setName(refs, e);
 			}
 		},
 	});
