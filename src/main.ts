@@ -3,14 +3,9 @@ import { handleRedirect } from './oauth';
 import { entries, isRunning, restoreFromDb, resume } from './queue';
 import { initUi, setStartupError } from './ui/app';
 
+// If input-focus zoom ever returns on iOS despite 16px fields, the fallback is
+// setting maximum-scale=1 in the viewport meta for iOS only (it costs pinch zoom).
 async function init(): Promise<void> {
-	// iOS can zoom into focused inputs even at 16px; it honors maximum-scale
-	// (unlike user-scalable=no), so cap it there only — other platforms keep pinch zoom
-	if (/iPhone|iPad|iPod/.test(navigator.userAgent)) {
-		document
-			.querySelector('meta[name="viewport"]')
-			?.setAttribute('content', 'width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover');
-	}
 	try {
 		await handleRedirect();
 	} catch (e) {
