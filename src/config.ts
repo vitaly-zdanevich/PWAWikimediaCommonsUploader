@@ -10,7 +10,7 @@ export const WDQS_URL = 'https://query.wikidata.org/sparql';
 // Register at https://meta.wikimedia.org/wiki/Special:OAuthConsumerRegistration/propose/oauth2
 // (public / non-confidential client, callback must exactly match the deployed URL).
 // Can also be set at runtime in Preferences without rebuilding.
-export const DEFAULT_OAUTH_CLIENT_ID = '';
+export const DEFAULT_OAUTH_CLIENT_ID = '2260471694b45464c738bf0a5f4fe830';
 
 export const PWA_CATEGORY = 'Uploaded by PWA from Vitaly Zdanevich';
 
