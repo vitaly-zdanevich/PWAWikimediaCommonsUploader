@@ -140,3 +140,7 @@ queue and retries automatically; large batches may take a while. Users in the
   muted video to keep the screen awake (auto-lock is prevented; the lock button
   still suspends it). If an upload is interrupted, reopen the app — it continues
   automatically from the last uploaded chunk.
+
+Category: https://commons.wikimedia.org/wiki/Category:Uploaded_by_PWA_from_Vitaly_Zdanevich
+
+Wikidata: https://www.wikidata.org/wiki/Q140522959
