@@ -38,9 +38,37 @@ self.addEventListener('activate', (e) => {
 	);
 });
 
+// Android share sheet target: stash the shared files, the page picks them up
+function stashShared(files) {
+	return new Promise((resolve, reject) => {
+		const open = indexedDB.open('commons-uploader-shared', 1);
+		open.onupgradeneeded = () => open.result.createObjectStore('files', { autoIncrement: true });
+		open.onsuccess = () => {
+			const tx = open.result.transaction('files', 'readwrite');
+			const store = tx.objectStore('files');
+			for (const f of files) store.add(f);
+			tx.oncomplete = resolve;
+			tx.onerror = () => reject(tx.error);
+		};
+		open.onerror = () => reject(open.error);
+	});
+}
+
 self.addEventListener('fetch', (e) => {
 	const req = e.request;
-	if (req.method !== 'GET' || new URL(req.url).origin !== location.origin) return;
+	const url = new URL(req.url);
+	if (req.method === 'POST' && url.origin === location.origin && url.pathname.endsWith('/share-target/')) {
+		e.respondWith(
+			(async () => {
+				const fd = await req.formData();
+				const files = fd.getAll('media').filter((f) => typeof f !== 'string');
+				if (files.length) await stashShared(files).catch(() => undefined);
+				return new Response(null, { status: 303, headers: { Location: './' } });
+			})(),
+		);
+		return;
+	}
+	if (req.method !== 'GET' || url.origin !== location.origin) return;
 	if (req.mode === 'navigate') {
 		e.respondWith(fetch(req, REVALIDATE).catch(() => caches.match('./')));
 		return;

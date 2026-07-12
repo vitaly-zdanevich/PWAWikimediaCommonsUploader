@@ -39,3 +39,23 @@ export function dbDelete(id: string): Promise<unknown> {
 export function dbAll(): Promise<Entry[]> {
 	return tx('readonly', (s) => s.getAll() as IDBRequest<Entry[]>).catch(() => [] as Entry[]);
 }
+
+/** Files stashed by the service worker when other apps share to us (Android). */
+export function takeSharedFiles(): Promise<File[]> {
+	return new Promise<File[]>((resolve, reject) => {
+		const open = indexedDB.open('commons-uploader-shared', 1);
+		open.onupgradeneeded = () => open.result.createObjectStore('files', { autoIncrement: true });
+		open.onsuccess = () => {
+			const db = open.result;
+			const txn = db.transaction('files', 'readwrite');
+			const store = txn.objectStore('files');
+			const req = store.getAll();
+			req.onsuccess = () => {
+				store.clear();
+				txn.oncomplete = () => resolve((req.result as File[]) ?? []);
+			};
+			txn.onerror = () => reject(txn.error);
+		};
+		open.onerror = () => reject(open.error);
+	}).catch(() => [] as File[]);
+}

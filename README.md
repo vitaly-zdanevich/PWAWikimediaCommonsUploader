@@ -17,6 +17,9 @@ conversion endpoint for formats Commons rejects).
 
 - OAuth 2.0 login (PKCE, no server), multiple accounts with switching
 - Select many images/videos, or take a photo/video with the camera (iOS and Android)
+- Receive photos shared from other apps: on Android the installed PWA appears in the
+  system share sheet; iOS never lets PWAs into its share sheet, so there use
+  Photos → Copy → 📋 Paste (also Ctrl/Cmd+V on desktop)
 - Per-file optional name, description, license and categories; global categories and file-name prefix
 - Category autocompletion (your saved categories + Commons prefix search); a click on an added category chip opens it on Commons
 - 📍 Nearby: finds the closest Commons categories via Wikidata (geolocation), with direction arrow and distance in meters, ordered by distance

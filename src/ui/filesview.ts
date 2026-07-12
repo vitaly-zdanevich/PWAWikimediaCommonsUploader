@@ -288,6 +288,33 @@ export function renderFiles(): HTMLElement {
 
 	validation = el('p', { class: 'err', hidden: true });
 
+	// iOS PWAs cannot be share-sheet targets, so Photos → Copy → Paste is the route there
+	const pasteFromClipboard = async () => {
+		try {
+			const items = await navigator.clipboard.read();
+			const files: File[] = [];
+			for (const it of items) {
+				const type = it.types.find((t) => t.startsWith('image/') || t.startsWith('video/'));
+				if (!type) continue;
+				const blob = await it.getType(type);
+				const ext = type.split('/')[1].replace('jpeg', 'jpg').replace('quicktime', 'mov');
+				const stamp = new Date().toISOString().slice(0, 19).replace('T', ' ').replace(/:/g, '-');
+				files.push(new File([blob], `Pasted ${stamp}.${ext}`, { type }));
+			}
+			if (files.length) {
+				addFiles(files);
+			} else if (validation) {
+				validation.textContent = 'No image or video in the clipboard.';
+				validation.hidden = false;
+			}
+		} catch {
+			if (validation) {
+				validation.textContent = 'Clipboard access was not allowed.';
+				validation.hidden = false;
+			}
+		}
+	};
+
 	const onUpload = () => {
 		if (!validation) return;
 		const fresh = entries.filter((e) => e.status === 'new');
@@ -331,6 +358,7 @@ export function renderFiles(): HTMLElement {
 			el('button', { type: 'button', class: 'btn', onclick: () => filesInput.click() }, '📁 Select files'),
 			el('button', { type: 'button', class: 'btn', onclick: () => photoInput.click() }, '📷 Photo'),
 			el('button', { type: 'button', class: 'btn', onclick: () => videoInput.click() }, '🎥 Video'),
+			el('button', { type: 'button', class: 'btn', onclick: () => void pasteFromClipboard() }, '📋 Paste'),
 			filesInput,
 			photoInput,
 			videoInput,
