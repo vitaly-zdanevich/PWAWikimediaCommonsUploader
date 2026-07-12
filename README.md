@@ -144,3 +144,5 @@ queue and retries automatically; large batches may take a while. Users in the
 Category: https://commons.wikimedia.org/wiki/Category:Uploaded_by_PWA_from_Vitaly_Zdanevich
 
 Wikidata: https://www.wikidata.org/wiki/Q140522959
+
+See also https://commons.wikimedia.org/wiki/Commons:Upload_tools
