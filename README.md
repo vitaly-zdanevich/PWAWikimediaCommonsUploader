@@ -132,5 +132,8 @@ queue and retries automatically; large batches may take a while. Users in the
 ## Notes on iOS
 
 - Install via Safari → Share → *Add to Home Screen* for full-screen mode.
-- iOS suspends background tabs aggressively; if an upload is interrupted, reopen
-  the app — it continues from the last uploaded chunk.
+- iOS suspends web apps when the screen locks or you switch away — there is no
+  background-upload API in iOS Safari. While uploading, the app plays a hidden
+  muted video to keep the screen awake (auto-lock is prevented; the lock button
+  still suspends it). If an upload is interrupted, reopen the app — it continues
+  automatically from the last uploaded chunk.

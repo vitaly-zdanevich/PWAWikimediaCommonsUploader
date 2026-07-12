@@ -3,6 +3,7 @@ import { getCsrfToken, publishStash, titleExists, uploadChunk } from './api';
 import { CHUNK_SIZE, PWA_CATEGORY, UPLOAD_COMMENT } from './config';
 import { readJpegGps } from './exif';
 import { dbAll, dbDelete, dbPut } from './idb';
+import { keepAwake } from './keepawake';
 import { buildFinalName, requiresConversion } from './naming';
 import { ensureFresh, randomId } from './oauth';
 import { getAccount, getPrefs, rememberCategories, rememberPrefix } from './prefs';
@@ -110,6 +111,7 @@ export function startUploads(username: string, prefix: string, globalCats: strin
 	}
 	if (prefix.trim()) rememberPrefix(prefix);
 	onUpdate();
+	keepAwake(true); // still inside the tap gesture, so iOS allows it
 	void run();
 }
 
@@ -125,6 +127,7 @@ export function retryEntry(id: string, snap: { prefix: string; globalCats: strin
 	e.errorLinks = undefined;
 	persist(e);
 	onUpdate(e);
+	keepAwake(true);
 	void run();
 }
 
@@ -139,10 +142,12 @@ async function run(): Promise<void> {
 		for (;;) {
 			const e = entries.find((x) => x.status === 'pending');
 			if (!e) break;
-			await processEntry(e);
+			const halt = await processEntry(e);
+			if (halt) break; // offline/suspended: online + visibility events resume
 		}
 	} finally {
 		running = false;
+		keepAwake(false);
 		onUpdate();
 	}
 }
@@ -159,7 +164,8 @@ function fail(e: Entry, message: string, links?: Entry['errorLinks']): void {
 	onUpdate(e);
 }
 
-async function processEntry(e: Entry): Promise<void> {
+/** Returns true when the queue should halt and wait for network/visibility events. */
+async function processEntry(e: Entry): Promise<boolean> {
 	e.status = 'uploading';
 	e.progressText = e.viaLambda ? 'converting…' : '0%';
 	onUpdate(e);
@@ -176,7 +182,16 @@ async function processEntry(e: Entry): Promise<void> {
 		rememberCategories([...e.globalCats, ...e.categories]);
 		onUpdate(e);
 	} catch (err) {
-		if (err instanceof SkipError) return; // entry already marked failed with a rich message
+		if (err instanceof SkipError) return false; // entry already marked failed with a rich message
+		if (err instanceof TypeError && /load failed|failed to fetch|network/i.test(err.message)) {
+			// connection lost or iOS suspended us mid-request: keep the entry
+			// pending so it continues from the persisted offset on resume
+			e.status = 'pending';
+			e.progressText = 'waiting for network…';
+			persist(e);
+			onUpdate(e);
+			return true;
+		}
 		if (err instanceof RateLimitError) {
 			// quota window is long (380 upload hits / 72 min): wait, then the run loop retries
 			const waits = (rateLimitWaits.get(e.id) ?? 0) + 1;
@@ -188,10 +203,10 @@ async function processEntry(e: Entry): Promise<void> {
 				persist(e);
 				onUpdate(e);
 				await sleep(waitSec * 1000);
-				return;
+				return false;
 			}
 			fail(e, 'Wikimedia Commons rate limit reached (regular users: 380 upload requests per 72 minutes). Retry later.');
-			return;
+			return false;
 		}
 		if (err instanceof ApiError && ['stashfailed', 'invalidsessiondata', 'stasherror'].includes(err.code)) {
 			// the stashed chunks are gone (e.g. expired after a long pause): restart this file
@@ -200,6 +215,7 @@ async function processEntry(e: Entry): Promise<void> {
 		}
 		fail(e, err instanceof Error ? err.message : String(err));
 	}
+	return false;
 }
 
 function entryWikitext(e: Entry): string {
