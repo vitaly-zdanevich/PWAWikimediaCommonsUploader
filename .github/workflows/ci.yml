@@ -41,6 +41,31 @@ jobs:
         with:
           path: dist
 
+  sonar:
+    name: Sonar
+    runs-on: ubuntu-latest
+    env:
+      SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+    steps:
+      - name: Skip when Sonar token is absent
+        if: ${{ env.SONAR_TOKEN == '' }}
+        run: echo "SONAR_TOKEN is not configured; skipping Sonar scan."
+      - uses: actions/checkout@v4
+        if: ${{ env.SONAR_TOKEN != '' }}
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        if: ${{ env.SONAR_TOKEN != '' }}
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+        if: ${{ env.SONAR_TOKEN != '' }}
+      - run: npm test -- --coverage
+        if: ${{ env.SONAR_TOKEN != '' }}
+      - uses: SonarSource/sonarqube-scan-action@7006c4492b2e0ee0f816d36501671557c97f5995 # v8.1.0
+        if: ${{ env.SONAR_TOKEN != '' }}
+
   deploy:
     needs: check
     if: github.event_name == 'push' && github.ref == 'refs/heads/main' && needs.check.outputs.deploy == 'yes'
