@@ -43,14 +43,7 @@ async function init(): Promise<void> {
 			if (hadController && !busy) location.reload();
 			hadController = true;
 		});
-		navigator.serviceWorker
-			.register(import.meta.env.BASE_URL + 'sw.js', { updateViaCache: 'none' })
-			.then((reg) => {
-				document.addEventListener('visibilitychange', () => {
-					if (!document.hidden) void reg.update().catch(() => undefined);
-				});
-			})
-			.catch(() => undefined);
+		navigator.serviceWorker.register(import.meta.env.BASE_URL + 'sw.js').catch(() => undefined);
 	}
 }
 
