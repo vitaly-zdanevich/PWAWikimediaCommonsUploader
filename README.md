@@ -1,5 +1,17 @@
 # PWA Wikimedia Commons Uploader
 
+[![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=vitaly-zdanevich_PWAWikimediaCommonsUploader&metric=alert_status)](https://sonarcloud.io/summary/new_code?id=vitaly-zdanevich_PWAWikimediaCommonsUploader)
+[![Coverage](https://sonarcloud.io/api/project_badges/measure?project=vitaly-zdanevich_PWAWikimediaCommonsUploader&metric=coverage)](https://sonarcloud.io/summary/new_code?id=vitaly-zdanevich_PWAWikimediaCommonsUploader)
+[![Bugs](https://sonarcloud.io/api/project_badges/measure?project=vitaly-zdanevich_PWAWikimediaCommonsUploader&metric=bugs)](https://sonarcloud.io/summary/new_code?id=vitaly-zdanevich_PWAWikimediaCommonsUploader)
+[![Vulnerabilities](https://sonarcloud.io/api/project_badges/measure?project=vitaly-zdanevich_PWAWikimediaCommonsUploader&metric=vulnerabilities)](https://sonarcloud.io/summary/new_code?id=vitaly-zdanevich_PWAWikimediaCommonsUploader)
+[![Code Smells](https://sonarcloud.io/api/project_badges/measure?project=vitaly-zdanevich_PWAWikimediaCommonsUploader&metric=code_smells)](https://sonarcloud.io/summary/new_code?id=vitaly-zdanevich_PWAWikimediaCommonsUploader)
+[![Duplicated Lines](https://sonarcloud.io/api/project_badges/measure?project=vitaly-zdanevich_PWAWikimediaCommonsUploader&metric=duplicated_lines_density)](https://sonarcloud.io/summary/new_code?id=vitaly-zdanevich_PWAWikimediaCommonsUploader)
+[![Maintainability](https://sonarcloud.io/api/project_badges/measure?project=vitaly-zdanevich_PWAWikimediaCommonsUploader&metric=sqale_rating)](https://sonarcloud.io/summary/new_code?id=vitaly-zdanevich_PWAWikimediaCommonsUploader)
+[![Reliability](https://sonarcloud.io/api/project_badges/measure?project=vitaly-zdanevich_PWAWikimediaCommonsUploader&metric=reliability_rating)](https://sonarcloud.io/summary/new_code?id=vitaly-zdanevich_PWAWikimediaCommonsUploader)
+[![Security](https://sonarcloud.io/api/project_badges/measure?project=vitaly-zdanevich_PWAWikimediaCommonsUploader&metric=security_rating)](https://sonarcloud.io/summary/new_code?id=vitaly-zdanevich_PWAWikimediaCommonsUploader)
+[![Lines of Code](https://sonarcloud.io/api/project_badges/measure?project=vitaly-zdanevich_PWAWikimediaCommonsUploader&metric=ncloc)](https://sonarcloud.io/summary/new_code?id=vitaly-zdanevich_PWAWikimediaCommonsUploader)
+[![Technical Debt](https://sonarcloud.io/api/project_badges/measure?project=vitaly-zdanevich_PWAWikimediaCommonsUploader&metric=sqale_index)](https://sonarcloud.io/summary/new_code?id=vitaly-zdanevich_PWAWikimediaCommonsUploader)
+
 A small, fast, framework-free PWA that uploads photos and videos to
 [Wikimedia Commons](https://commons.wikimedia.org/). Works offline, installs to the
 home screen (full screen), survives app/device restarts mid-upload, and runs fully
