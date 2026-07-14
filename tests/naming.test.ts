@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { buildFinalName, needsPrefix, requiresConversion, sanitizeFileName, splitExt } from '../src/naming';
+import { buildFinalName, namifyBase, needsPrefix, requiresConversion, sanitizeFileName, splitExt } from '../src/naming';
 
 describe('splitExt', () => {
 	it('splits a normal extension', () => {
@@ -71,5 +71,31 @@ describe('requiresConversion', () => {
 describe('sanitizeFileName', () => {
 	it('collapses whitespace', () => {
 		expect(sanitizeFileName('  a   b  ')).toBe('a b');
+	});
+});
+
+describe('namifyBase', () => {
+	const july = new Date(2026, 6, 11, 15, 0, 0).getTime();
+
+	it('builds year+month, paired coordinate digits and the device', () => {
+		expect(namifyBase(46.5476, 26.5556, july, 'iPhone 7 Plus')).toBe(
+			'2026july_46_54_76_to_26_55_56_iphone7plus',
+		);
+	});
+
+	it('pads short fractions and works without a device', () => {
+		expect(namifyBase(41.65, 41.6301, july)).toBe('2026july_41_65_00_to_41_63_01');
+	});
+
+	it('carries over when the fraction rounds to the next degree', () => {
+		expect(namifyBase(41.99999, 41.5, july)).toBe('2026july_42_00_00_to_41_50_00');
+	});
+
+	it('keeps the sign for southern/western coordinates', () => {
+		expect(namifyBase(-33.8688, -70.6693, july)).toBe('2026july_-33_86_88_to_-70_66_93');
+	});
+
+	it('produces names that do not trigger the generic-name prefix rule', () => {
+		expect(needsPrefix('', namifyBase(46.5476, 26.5556, july, 'iPhone 7 Plus'), 'IMG_1.jpg')).toBe(false);
 	});
 });

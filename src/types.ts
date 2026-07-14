@@ -27,6 +27,9 @@ export interface Entry {
 	/** EXIF GPS position, when the photo has one */
 	lat?: number;
 	lon?: number;
+	/** EXIF camera model and capture time, when present */
+	exifModel?: string;
+	exifTakenAt?: number;
 
 	customName: string;
 	description: string;

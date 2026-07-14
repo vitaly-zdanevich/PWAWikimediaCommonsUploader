@@ -1,5 +1,6 @@
 import { fetchNearbyCategories, formatDistance, type NearbyCategory } from '../geo';
-import { buildFinalName, needsPrefix } from '../naming';
+import { buildFinalName, namifyBase, needsPrefix } from '../naming';
+import { rerender } from './app';
 import { getActiveAccount, getPrefs } from '../prefs';
 import {
 	addFiles,
@@ -315,6 +316,36 @@ export function renderFiles(): HTMLElement {
 		}
 	};
 
+	// name every GPS-tagged file as <year><month>_<lat>_to_<lon>_<device>
+	const NAMIFY_NOTE = 'Feel free to rename to something more descriptive.';
+	const namify = () => {
+		const withGps = entries.filter((e) => e.status === 'new' && e.lat !== undefined && e.lon !== undefined);
+		if (!withGps.length) {
+			if (validation) {
+				validation.textContent = 'No files with GPS coordinates to rename.';
+				validation.hidden = false;
+			}
+			return;
+		}
+		const used = new Map<string, number>();
+		for (const e of withGps) {
+			let base = namifyBase(e.lat ?? 0, e.lon ?? 0, e.exifTakenAt ?? e.lastModified, e.exifModel);
+			const n = (used.get(base) ?? 0) + 1;
+			used.set(base, n);
+			if (n > 1) base = `${base}_${n}`;
+			e.customName = base;
+			if (!e.description.includes(NAMIFY_NOTE)) {
+				e.description = e.description ? `${e.description}\n${NAMIFY_NOTE}` : NAMIFY_NOTE;
+			}
+		}
+		rerender(); // rebuild rows so the per-file name/description fields show the new values
+		const skipped = entries.filter((e) => e.status === 'new' && e.lat === undefined).length;
+		if (validation && skipped) {
+			validation.textContent = `${skipped} file${skipped === 1 ? ' has' : 's have'} no GPS coordinates and kept the original name.`;
+			validation.hidden = false;
+		}
+	};
+
 	const onUpload = () => {
 		if (!validation) return;
 		const fresh = entries.filter((e) => e.status === 'new');
@@ -359,6 +390,7 @@ export function renderFiles(): HTMLElement {
 			el('button', { type: 'button', class: 'btn', onclick: () => photoInput.click() }, '📷 Photo'),
 			el('button', { type: 'button', class: 'btn', onclick: () => videoInput.click() }, '🎥 Video'),
 			el('button', { type: 'button', class: 'btn', onclick: () => void pasteFromClipboard() }, '📋 Paste'),
+			el('button', { type: 'button', class: 'btn', title: 'Name GPS-tagged files by date, coordinates and camera', onclick: namify }, '✨ Namify'),
 			filesInput,
 			photoInput,
 			videoInput,

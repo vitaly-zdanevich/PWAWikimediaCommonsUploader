@@ -1,7 +1,7 @@
 import { ApiError, RateLimitError, filePageUrl } from './apierrors';
 import { getCsrfToken, publishStash, titleExists, uploadChunk } from './api';
 import { CHUNK_SIZE, PWA_CATEGORY, UPLOAD_COMMENT } from './config';
-import { readJpegGps } from './exif';
+import { readJpegMeta } from './exif';
 import { dbAll, dbDelete, dbPut } from './idb';
 import { keepAwake } from './keepawake';
 import { buildFinalName, requiresConversion } from './naming';
@@ -47,11 +47,15 @@ export function addFiles(files: ArrayLike<File>): void {
 		};
 		entries.push(entry);
 		if (f.type === 'image/jpeg' || /\.jpe?g$/i.test(f.name)) {
-			void readJpegGps(f).then((gps) => {
-				if (!gps) return;
-				entry.lat = gps.lat;
-				entry.lon = gps.lon;
-				onUpdate();
+			void readJpegMeta(f).then((meta) => {
+				if (!meta) return;
+				if (meta.gps) {
+					entry.lat = meta.gps.lat;
+					entry.lon = meta.gps.lon;
+				}
+				if (meta.model) entry.exifModel = meta.model;
+				if (meta.takenAt) entry.exifTakenAt = meta.takenAt;
+				if (meta.gps || meta.model || meta.takenAt) onUpdate();
 			});
 		}
 	}

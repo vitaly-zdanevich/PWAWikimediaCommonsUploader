@@ -65,3 +65,29 @@ export function requiresConversion(name: string): boolean {
 	const ext = splitExt(name).ext.slice(1).toLowerCase();
 	return CONVERT_EXTENSIONS.includes(ext);
 }
+
+const MONTHS = [
+	'january', 'february', 'march', 'april', 'may', 'june',
+	'july', 'august', 'september', 'october', 'november', 'december',
+];
+
+/** 46.5476 → "46_54_76" (degrees + 4 decimals in two pairs, ~11 m precision) */
+function namifyCoord(v: number): string {
+	const neg = v < 0 ? '-' : '';
+	const a = Math.abs(v);
+	let deg = Math.floor(a);
+	let frac = Math.round((a - deg) * 10000);
+	if (frac === 10000) {
+		deg += 1;
+		frac = 0;
+	}
+	const f = String(frac).padStart(4, '0');
+	return `${neg}${deg}_${f.slice(0, 2)}_${f.slice(2)}`;
+}
+
+/** "2026july_46_54_76_to_26_55_56_iphone7plus" from EXIF position, date and model. */
+export function namifyBase(lat: number, lon: number, takenAt: number, model?: string): string {
+	const d = new Date(takenAt);
+	const device = model ? '_' + model.toLowerCase().replace(/[^a-z0-9]+/g, '') : '';
+	return `${d.getFullYear()}${MONTHS[d.getMonth()]}_${namifyCoord(lat)}_to_${namifyCoord(lon)}${device}`;
+}
