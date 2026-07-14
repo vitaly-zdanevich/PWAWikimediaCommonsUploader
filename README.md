@@ -148,10 +148,12 @@ queue and retries automatically; large batches may take a while. Users in the
 
 - Install via Safari → Share → *Add to Home Screen* for full-screen mode.
 - iOS suspends web apps when the screen locks or you switch away — there is no
-  background-upload API in iOS Safari. While uploading, the app plays a hidden
-  muted video to keep the screen awake (auto-lock is prevented; the lock button
-  still suspends it). If an upload is interrupted, reopen the app — it continues
-  automatically from the last uploaded chunk.
+  background-upload API in iOS Safari. While uploading, the app keeps the screen
+  awake: via the Wake Lock API where available (Android, iOS 16.4+), or on older
+  iOS by playing a hidden video with a silent audio track (muted playback does
+  not prevent sleep there — a side effect is that starting an upload may pause
+  your background music). The lock button still suspends the app; reopen it and
+  the upload continues automatically from the last uploaded chunk.
 
 Category: https://commons.wikimedia.org/wiki/Category:Uploaded_by_PWA_from_Vitaly_Zdanevich
 
