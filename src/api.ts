@@ -105,6 +105,58 @@ export async function titleExists(fileName: string): Promise<boolean> {
 	return Object.entries(pages).some(([id, p]) => Number(id) > 0 && p.missing === undefined);
 }
 
+/** Last revision's author and timestamp, or null when the page is missing. */
+export async function pageLastEdit(title: string): Promise<{ user: string; timestamp: string } | null> {
+	const json = await apiGet({
+		action: 'query',
+		prop: 'revisions',
+		titles: title,
+		rvprop: 'user|timestamp',
+		rvlimit: '1',
+	});
+	const pages = (json.query as { pages?: Record<string, { missing?: string; revisions?: { user: string; timestamp: string }[] }> } | undefined)?.pages ?? {};
+	for (const [id, p] of Object.entries(pages)) {
+		if (Number(id) > 0 && p.missing === undefined && p.revisions?.[0]) return p.revisions[0];
+	}
+	return null;
+}
+
+/** Overwrites an existing page; basetimestamp makes MediaWiki reject edit conflicts. */
+export async function editPage(o: {
+	username: string;
+	title: string;
+	text: string;
+	summary: string;
+	baseTimestamp: string;
+}): Promise<void> {
+	const run = async () => {
+		const token = await getCsrfToken(o.username);
+		const json = await apiPost(
+			{
+				action: 'edit',
+				title: o.title,
+				text: o.text,
+				summary: o.summary,
+				basetimestamp: o.baseTimestamp,
+				nocreate: '1',
+				token,
+			},
+			o.username,
+		);
+		const result = (json.edit as { result?: string } | undefined)?.result;
+		if (result !== 'Success') throw new Error(`Unexpected edit result: ${result ?? 'none'}`);
+	};
+	try {
+		await run();
+	} catch (e) {
+		if (e instanceof ApiError && e.code === 'badtoken') {
+			await getCsrfToken(o.username, true);
+			return run();
+		}
+		throw e;
+	}
+}
+
 export interface UploadChunkResult {
 	result: string;
 	offset?: number;

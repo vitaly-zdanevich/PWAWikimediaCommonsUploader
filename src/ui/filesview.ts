@@ -12,6 +12,7 @@ import {
 	removeEntry,
 	retryEntry,
 	startUploads,
+	updateOnCommons,
 } from '../queue';
 import type { Entry } from '../types';
 import { LICENSES } from '../wikitext';
@@ -211,16 +212,21 @@ function renderRow(e: Entry): HTMLElement {
 		set: (n) => (e.categories = n),
 		placeholder: 'Extra category for this file…',
 	});
+	// renaming an uploaded file needs the filemover right, so no name field after upload
+	if (e.status !== 'done') {
+		details.append(
+			el('input', {
+				type: 'text',
+				value: e.customName,
+				placeholder: 'File name (extension is kept)',
+				oninput: (ev: Event) => {
+					e.customName = (ev.target as HTMLInputElement).value;
+					setName(refs, e);
+				},
+			}),
+		);
+	}
 	details.append(
-		el('input', {
-			type: 'text',
-			value: e.customName,
-			placeholder: 'File name (extension is kept)',
-			oninput: (ev: Event) => {
-				e.customName = (ev.target as HTMLInputElement).value;
-				setName(refs, e);
-			},
-		}),
 		el('textarea', {
 			rows: '3',
 			placeholder: 'Description…',
@@ -229,6 +235,23 @@ function renderRow(e: Entry): HTMLElement {
 		licSel,
 		perFileCats.root,
 	);
+	if (e.status === 'done') {
+		const updMsg = el('span', { class: 'muted' });
+		const updBtn = el('button', { type: 'button', class: 'btn small' }, 'Update on Commons');
+		updBtn.addEventListener('click', () => {
+			updBtn.disabled = true;
+			updMsg.className = 'muted';
+			updMsg.textContent = ' updating…';
+			updateOnCommons(e.id)
+				.then(() => (updMsg.textContent = ' ✓ updated'))
+				.catch((err: Error) => {
+					updMsg.className = 'err';
+					updMsg.textContent = ' ' + err.message;
+				})
+				.finally(() => (updBtn.disabled = false));
+		});
+		details.append(el('div', {}, updBtn, updMsg));
+	}
 
 	let thumb: HTMLElement | null = null;
 	if (prefs.showThumbs && e.file && e.file.type.startsWith('image/')) {

@@ -12,6 +12,8 @@ vi.mock('../src/api', () => ({
 	titleExists: vi.fn(async () => false),
 	uploadChunk: vi.fn(),
 	publishStash: vi.fn(),
+	pageLastEdit: vi.fn(),
+	editPage: vi.fn(async () => undefined),
 }));
 vi.mock('../src/idb', () => ({
 	dbPut: vi.fn(async () => undefined),
@@ -20,9 +22,9 @@ vi.mock('../src/idb', () => ({
 }));
 vi.mock('../src/keepawake', () => ({ keepAwake: vi.fn() }));
 
-import { publishStash, titleExists, uploadChunk } from '../src/api';
+import { editPage, pageLastEdit, publishStash, titleExists, uploadChunk } from '../src/api';
 import { dbAll, dbPut } from '../src/idb';
-import { addFiles, doneEntries, entries, restoreFromDb, resume, retryEntry, startUploads } from '../src/queue';
+import { addFiles, doneEntries, entries, restoreFromDb, resume, retryEntry, startUploads, updateOnCommons } from '../src/queue';
 
 const upload = vi.mocked(uploadChunk);
 const publish = vi.mocked(publishStash);
@@ -122,6 +124,41 @@ describe('name conflicts', () => {
 		const pub = publish.mock.calls[publish.mock.calls.length - 1][0];
 		expect(pub.fileName).toBe('New Fishing boats in Batumi harbor.jpg');
 		expect(pub.text).toContain('[[Category:Harbors]]');
+	});
+});
+
+describe('updateOnCommons', () => {
+	async function uploadedEntry(): Promise<string> {
+		addFiles([makeFile()]);
+		startUploads('Vitaly Zdanevich', '', ['Cats']);
+		await vi.waitFor(() => expect(entries[0].status).toBe('done'));
+		return entries[0].id;
+	}
+
+	it('refuses when someone else edited the page since upload', async () => {
+		const id = await uploadedEntry();
+		vi.mocked(pageLastEdit).mockResolvedValue({ user: 'SomeBot', timestamp: '2026-07-15T10:00:00Z' });
+
+		await expect(updateOnCommons(id)).rejects.toThrow('edited on Commons by SomeBot');
+		expect(editPage).not.toHaveBeenCalled();
+	});
+
+	it('regenerates the wikitext and saves with basetimestamp when untouched', async () => {
+		const id = await uploadedEntry();
+		entries[0].description = 'Fixed description';
+		vi.mocked(pageLastEdit).mockResolvedValue({ user: 'Vitaly Zdanevich', timestamp: '2026-07-15T10:00:00Z' });
+
+		await updateOnCommons(id);
+		const call = vi.mocked(editPage).mock.calls[0][0];
+		expect(call.title).toBe('File:' + entries[0].finalName);
+		expect(call.text).toContain('Fixed description');
+		expect(call.text).toContain('[[Category:Cats]]');
+		expect(call.baseTimestamp).toBe('2026-07-15T10:00:00Z');
+	});
+
+	it('rejects for files that are not uploaded yet', async () => {
+		addFiles([makeFile()]);
+		await expect(updateOnCommons(entries[0].id)).rejects.toThrow('not uploaded yet');
 	});
 });
 

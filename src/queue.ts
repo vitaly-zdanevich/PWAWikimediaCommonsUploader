@@ -1,5 +1,5 @@
 import { ApiError, RateLimitError, filePageUrl } from './apierrors';
-import { getCsrfToken, publishStash, titleExists, uploadChunk } from './api';
+import { editPage, getCsrfToken, pageLastEdit, publishStash, titleExists, uploadChunk } from './api';
 import { CHUNK_SIZE, PWA_CATEGORY, UPLOAD_COMMENT } from './config';
 import { readJpegMeta } from './exif';
 import { dbAll, dbDelete, dbPut } from './idb';
@@ -286,6 +286,32 @@ async function commonsUpload(e: Entry): Promise<void> {
 	e.pageUrl = res.pageUrl;
 	e.fileUrl = res.fileUrl;
 	e.file = null;
+}
+
+/**
+ * Pushes edited description/categories/license of an uploaded file back to its
+ * Commons page. Refuses when someone else edited the page since — regenerating
+ * the wikitext would silently erase their work.
+ */
+export async function updateOnCommons(id: string): Promise<void> {
+	const e = entries.find((x) => x.id === id);
+	if (!e || e.status !== 'done' || !e.finalName) throw new Error('This file is not uploaded yet');
+	const title = 'File:' + e.finalName;
+	const last = await pageLastEdit(title);
+	if (!last) throw new Error('The file page was not found on Commons (renamed or deleted?)');
+	if (last.user !== e.username) {
+		throw new Error(
+			`The page was edited on Commons by ${last.user} — update it there instead, to not overwrite their changes.`,
+		);
+	}
+	await editPage({
+		username: e.username,
+		title,
+		text: entryWikitext(e),
+		summary: 'Update description/categories via PWA Uploader',
+		baseTimestamp: last.timestamp,
+	});
+	persist(e);
 }
 
 /** Thrown after fail() already recorded a detailed error, so processEntry keeps it. */

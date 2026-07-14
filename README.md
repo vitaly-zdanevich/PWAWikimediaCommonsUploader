@@ -47,6 +47,9 @@ conversion endpoint for formats Commons rejects).
 - Chunked, resumable uploads: continues after switching apps, going offline, or a device restart (queue and file bytes persist in IndexedDB)
 - Clear red errors from Commons, including links when the file name is taken or an identical file (same SHA1) already exists — after a rename, retry republishes instantly without re-uploading
 - Text-only list with ✅ when uploaded (thumbnails can be enabled in Preferences)
+- Uploaded files stay editable: change description/categories/license and push with
+  "Update on Commons" — refused if anyone else edited the page since, to never
+  overwrite their work (renaming is excluded: it needs the filemover right)
 - After uploading: copy the list of direct file URLs or Commons page URLs (one per line)
 - HEIC / H.264 / H.265 files are sent to a configurable conversion endpoint (AWS Lambda)
 - Dark mode with pure `#000` background (`prefers-color-scheme`)
