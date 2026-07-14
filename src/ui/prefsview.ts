@@ -36,32 +36,50 @@ interface GhCommit {
 	commit: { message: string; committer?: { date?: string }; author?: { date?: string } };
 }
 
+/** package.json version at a given commit; raw.githubusercontent is CORS-open and not API-rate-limited. */
+async function versionAt(sha: string): Promise<string> {
+	try {
+		const res = await fetch(`https://raw.githubusercontent.com/${GITHUB_OWNER}/${GITHUB_REPO}/${sha}/package.json`);
+		if (!res.ok) return '';
+		const v = (JSON.parse(await res.text()) as { version?: string }).version;
+		return v ? `v${v}` : '';
+	} catch {
+		return '';
+	}
+}
+
 async function loadCommits(container: HTMLElement): Promise<void> {
 	try {
 		let commits: GhCommit[] | null = null;
-		const cached = sessionStorage.getItem('cu_commits');
+		let versions: string[] | null = null;
+		const cached = sessionStorage.getItem('cu_commits2');
 		if (cached) {
-			const parsed = JSON.parse(cached) as { ts: number; data: GhCommit[] };
-			if (Date.now() - parsed.ts < 10 * 60 * 1000) commits = parsed.data;
+			const parsed = JSON.parse(cached) as { ts: number; data: GhCommit[]; versions: string[] };
+			if (Date.now() - parsed.ts < 10 * 60 * 1000) {
+				commits = parsed.data;
+				versions = parsed.versions;
+			}
 		}
-		if (!commits) {
+		if (!commits || !versions) {
 			const res = await fetch(`https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/commits?per_page=10`);
 			if (!res.ok) throw new Error(`HTTP ${res.status}`);
 			commits = (await res.json()) as GhCommit[];
-			sessionStorage.setItem('cu_commits', JSON.stringify({ ts: Date.now(), data: commits }));
+			versions = await Promise.all(commits.map((c) => versionAt(c.sha)));
+			sessionStorage.setItem('cu_commits2', JSON.stringify({ ts: Date.now(), data: commits, versions }));
 		}
 		const ul = el('ul', { class: 'commits' });
-		for (const c of commits) {
+		commits.forEach((c, i) => {
 			const date = (c.commit.committer?.date ?? c.commit.author?.date ?? '').slice(0, 10);
+			const ver = versions?.[i] ? ` ${versions[i]}` : '';
 			ul.append(
 				el(
 					'li',
 					{},
 					el('a', { href: c.html_url, target: '_blank', rel: 'noopener' }, c.sha.slice(0, 7)),
-					` ${date} ${c.commit.message.split('\n')[0]}`,
+					`${ver} ${date} ${c.commit.message.split('\n')[0]}`,
 				),
 			);
-		}
+		});
 		clear(container).append(ul);
 	} catch {
 		clear(container).append(el('p', { class: 'muted' }, 'Could not load commits.'));
