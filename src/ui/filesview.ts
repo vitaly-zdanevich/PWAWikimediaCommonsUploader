@@ -82,6 +82,14 @@ interface RowRefs {
 	status: HTMLElement;
 	name: HTMLElement;
 	err: HTMLElement;
+	edit: HTMLButtonElement;
+	remove: HTMLButtonElement;
+}
+
+/** no editing or removing while the file is being sent */
+function syncRowButtons(refs: RowRefs, e: Entry): void {
+	refs.edit.hidden = e.status === 'uploading';
+	refs.remove.hidden = e.status === 'uploading';
 }
 
 const rowRefs = new Map<string, RowRefs>();
@@ -156,6 +164,7 @@ export function patchEntry(e: Entry): void {
 	refs.status.textContent = statusText(e);
 	setName(refs, e);
 	setError(refs, e);
+	syncRowButtons(refs, e);
 	refreshCopyBar();
 	refreshUploadBtn();
 }
@@ -176,12 +185,24 @@ function renderRow(e: Entry): HTMLElement {
 	const status = el('span', { class: 'st' }, statusText(e));
 	const name = el('span', { class: 'fname' });
 	const err = el('div', { class: 'err', hidden: true });
-	const refs: RowRefs = { status, name, err };
+	const editBtn = el('button', { type: 'button', class: 'btn small', 'aria-label': 'Edit details' }, '✎');
+	const removeBtn = el('button', { type: 'button', class: 'btn small', 'aria-label': 'Remove' }, '×');
+	const refs: RowRefs = { status, name, err, edit: editBtn, remove: removeBtn };
 	rowRefs.set(e.id, refs);
 	setName(refs, e);
 	setError(refs, e);
+	syncRowButtons(refs, e);
 
 	const details = el('div', { class: 'details', hidden: true });
+	editBtn.addEventListener('click', () => (details.hidden = !details.hidden));
+	removeBtn.addEventListener('click', () => {
+		const u = thumbUrls.get(e.id);
+		if (u) {
+			URL.revokeObjectURL(u);
+			thumbUrls.delete(e.id);
+		}
+		removeEntry(e.id);
+	});
 	const licSel = el('select', { onchange: () => (e.license = licSel.value as Entry['license']) });
 	licSel.append(el('option', { value: '' }, `Default license (${LICENSES.find((l) => l.id === prefs.defaultLicense)?.label})`));
 	for (const l of LICENSES) licSel.append(el('option', { value: l.id, selected: l.id === e.license }, l.label));
@@ -230,17 +251,8 @@ function renderRow(e: Entry): HTMLElement {
 			name,
 			el('span', { class: 'muted size' }, fmtSize(e.size)),
 			e.viaLambda ? el('span', { class: 'badge', title: 'Not supported by Commons; sent via conversion endpoint' }, 'convert') : null,
-			el('button', { type: 'button', class: 'btn small', 'aria-label': 'Edit details', onclick: () => (details.hidden = !details.hidden) }, '✎'),
-			e.status === 'uploading'
-				? null
-				: el('button', { type: 'button', class: 'btn small', 'aria-label': 'Remove', onclick: () => {
-						const u = thumbUrls.get(e.id);
-						if (u) {
-							URL.revokeObjectURL(u);
-							thumbUrls.delete(e.id);
-						}
-						removeEntry(e.id);
-					} }, '×'),
+			editBtn,
+			removeBtn,
 		),
 		err,
 		details,
