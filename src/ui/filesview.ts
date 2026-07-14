@@ -2,6 +2,7 @@ import { fetchNearbyCategories, formatDistance, type NearbyCategory } from '../g
 import { buildFinalName, namifyBase, needsPrefix } from '../naming';
 import { rerender } from './app';
 import { getActiveAccount, getPrefs } from '../prefs';
+import { NAMIFY_CATEGORY } from '../config';
 import {
 	addFiles,
 	clearFinished,
@@ -336,6 +337,9 @@ export function renderFiles(): HTMLElement {
 			e.customName = base;
 			if (!e.description.includes(NAMIFY_NOTE)) {
 				e.description = e.description ? `${e.description}\n${NAMIFY_NOTE}` : NAMIFY_NOTE;
+			}
+			if (!e.categories.some((c) => c.toLowerCase() === NAMIFY_CATEGORY.toLowerCase())) {
+				e.categories = [...e.categories, NAMIFY_CATEGORY];
 			}
 		}
 		rerender(); // rebuild rows so the per-file name/description fields show the new values

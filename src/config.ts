@@ -14,6 +14,9 @@ export const DEFAULT_OAUTH_CLIENT_ID = '2260471694b45464c738bf0a5f4fe830';
 
 export const PWA_CATEGORY = 'Uploaded by PWA from Vitaly Zdanevich';
 
+// hidden maintenance category added by Namify, so coordinate-named files stay findable
+export const NAMIFY_CATEGORY = 'Files with coordinate-based names uploaded by PWA';
+
 // Every chunk consumes one hit of the Commons upload rate limit
 // (380 hits / 72 min for regular users), so chunks are large.
 export const CHUNK_SIZE = 16 * 1024 * 1024;
