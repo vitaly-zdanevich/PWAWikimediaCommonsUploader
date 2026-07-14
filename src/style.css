@@ -48,6 +48,14 @@ body {
 	padding: 8px 10px 40px;
 }
 
+/* small phones: every horizontal pixel goes to the file names */
+@media (max-width: 480px) {
+	#app {
+		padding-left: 0;
+		padding-right: 0;
+	}
+}
+
 header {
 	display: flex;
 	align-items: center;
