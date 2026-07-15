@@ -23,7 +23,9 @@ export const CHUNK_SIZE = 16 * 1024 * 1024;
 
 export const APP_VERSION = __APP_VERSION__;
 
-export const UPLOAD_COMMENT = `Uploaded by PWA from Vitaly Zdanevich (v${APP_VERSION})`;
+// summaries render wikilinks but never external URLs, so the clickable part
+// points to our section on Commons:Upload tools, which links to the app
+export const UPLOAD_COMMENT = `[[Commons:Upload tools#Progressive Web Apps|Uploaded by PWA from Vitaly Zdanevich]] (v${APP_VERSION})`;
 
 // Extensions Wikimedia Commons rejects: routed to the conversion endpoint (AWS Lambda).
 export const CONVERT_EXTENSIONS = [

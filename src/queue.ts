@@ -308,7 +308,7 @@ export async function updateOnCommons(id: string): Promise<void> {
 		username: e.username,
 		title,
 		text: entryWikitext(e),
-		summary: 'Update description/categories via PWA Uploader',
+		summary: 'Update description/categories via [[Commons:Upload tools#Progressive Web Apps|PWA Uploader]]',
 		baseTimestamp: last.timestamp,
 	});
 	persist(e);
