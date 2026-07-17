@@ -16,7 +16,7 @@ import {
 } from '../queue';
 import type { Entry } from '../types';
 import { LICENSES } from '../wikitext';
-import { createCatInput } from './catinput';
+import { createCatInput, type CatInput } from './catinput';
 import { clear, el } from './dom';
 import { openNearby } from './nearby';
 
@@ -85,6 +85,7 @@ interface RowRefs {
 	err: HTMLElement;
 	edit: HTMLButtonElement;
 	remove: HTMLButtonElement;
+	cats: CatInput;
 }
 
 /** no editing or removing while the file is being sent */
@@ -188,7 +189,12 @@ function renderRow(e: Entry): HTMLElement {
 	const err = el('div', { class: 'err', hidden: true });
 	const editBtn = el('button', { type: 'button', class: 'btn small', 'aria-label': 'Edit details' }, '✎');
 	const removeBtn = el('button', { type: 'button', class: 'btn small', 'aria-label': 'Remove' }, '×');
-	const refs: RowRefs = { status, name, err, edit: editBtn, remove: removeBtn };
+	const perFileCats = createCatInput({
+		get: () => e.categories,
+		set: (n) => (e.categories = n),
+		placeholder: 'Extra category for this file…',
+	});
+	const refs: RowRefs = { status, name, err, edit: editBtn, remove: removeBtn, cats: perFileCats };
 	rowRefs.set(e.id, refs);
 	setName(refs, e);
 	setError(refs, e);
@@ -207,11 +213,6 @@ function renderRow(e: Entry): HTMLElement {
 	const licSel = el('select', { onchange: () => (e.license = licSel.value as Entry['license']) });
 	licSel.append(el('option', { value: '' }, `Default license (${LICENSES.find((l) => l.id === prefs.defaultLicense)?.label})`));
 	for (const l of LICENSES) licSel.append(el('option', { value: l.id, selected: l.id === e.license }, l.label));
-	const perFileCats = createCatInput({
-		get: () => e.categories,
-		set: (n) => (e.categories = n),
-		placeholder: 'Extra category for this file…',
-	});
 	// renaming an uploaded file needs the filemover right, so no name field after upload
 	if (e.status !== 'done') {
 		details.append(
@@ -387,6 +388,10 @@ export function renderFiles(): HTMLElement {
 
 	const onUpload = () => {
 		if (!validation) return;
+		catInput.commit();
+		for (const e of entries) {
+			if (e.status === 'new') rowRefs.get(e.id)?.cats.commit();
+		}
 		const fresh = entries.filter((e) => e.status === 'new');
 		const missing = fresh.filter((e) => needsPrefix(prefix, e.customName, e.origName));
 		if (missing.length) {

@@ -11,6 +11,7 @@ export function categoryUrl(cat: string): string {
 export interface CatInput {
 	root: HTMLElement;
 	refresh(): void;
+	commit(): void;
 }
 
 /**
@@ -64,6 +65,11 @@ export function createCatInput(o: {
 		refresh();
 	}
 
+	function commit(): void {
+		if (normalizeCategory(input.value)) add(input.value);
+		else hide();
+	}
+
 	let reqSeq = 0;
 	let timer = 0;
 
@@ -94,6 +100,10 @@ export function createCatInput(o: {
 				el('button', {
 					type: 'button',
 					class: 'dropitem',
+					onpointerdown: (ev: Event) => {
+						ev.preventDefault();
+						add(c);
+					},
 					onmousedown: (ev: Event) => ev.preventDefault(),
 					onclick: () => add(c),
 				}, c),
@@ -108,16 +118,16 @@ export function createCatInput(o: {
 		timer = window.setTimeout(() => void suggest(), 250);
 	});
 	input.addEventListener('focus', () => void suggest());
-	input.addEventListener('blur', hide);
+	input.addEventListener('blur', commit);
 	input.addEventListener('keydown', (ev) => {
 		if (ev.key === 'Enter') {
 			ev.preventDefault();
-			if (input.value.trim()) add(input.value);
+			commit();
 		} else if (ev.key === 'Escape') {
 			hide();
 		}
 	});
 
 	refresh();
-	return { root, refresh };
+	return { root, refresh, commit };
 }
