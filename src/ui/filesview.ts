@@ -149,14 +149,11 @@ function refreshCopyBar(): void {
 	if (copyBar) copyBar.hidden = doneEntries().length === 0;
 }
 
-let runningNote: HTMLElement | null = null;
-
 function refreshUploadBtn(): void {
 	if (!uploadBtn) return;
 	const n = entries.filter((e) => e.status === 'new').length;
 	uploadBtn.disabled = n === 0;
 	uploadBtn.textContent = isRunning() && n === 0 ? 'Uploading…' : `⬆️ Upload ${n} file${n === 1 ? '' : 's'}`;
-	if (runningNote) runningNote.hidden = !isRunning();
 }
 
 /** Patches one row in place (status/name/error), so typing elsewhere is not disturbed. */
@@ -411,8 +408,6 @@ export function renderFiles(): HTMLElement {
 
 	uploadBtn = el('button', { type: 'button', class: 'btn primary wide' }, '');
 	uploadBtn.addEventListener('click', onUpload);
-	runningNote = el('p', { class: 'muted', hidden: true },
-		'The screen is kept awake while uploading. If iOS still pauses it (lock button, app switch), reopen the app — it continues from the same place.');
 
 	copyBar = el(
 		'div',
@@ -467,7 +462,6 @@ export function renderFiles(): HTMLElement {
 		validation,
 		el('ul', { class: 'filelist' }, ...entries.map(renderRow)),
 		uploadBtn,
-		runningNote,
 		copyBar,
 	);
 }
