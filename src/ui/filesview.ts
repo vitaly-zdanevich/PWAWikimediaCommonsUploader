@@ -85,8 +85,10 @@ async function refreshExifSuggestions(): Promise<void> {
 }
 
 interface RowRefs {
+	root: HTMLLIElement;
 	status: HTMLElement;
 	name: HTMLElement;
+	nameWarning: HTMLElement;
 	err: HTMLElement;
 	edit: HTMLButtonElement;
 	remove: HTMLButtonElement;
@@ -97,6 +99,12 @@ interface RowRefs {
 function syncRowButtons(refs: RowRefs, e: Entry): void {
 	refs.edit.hidden = e.status === 'uploading';
 	refs.remove.hidden = e.status === 'uploading';
+}
+
+function syncNameWarning(refs: RowRefs, e: Entry): void {
+	const show = (e.status === 'new' || e.status === 'error') && needsPrefix(prefix, e.customName, e.origName);
+	refs.root.classList.toggle('needs-name', show);
+	refs.nameWarning.hidden = !show;
 }
 
 const rowRefs = new Map<string, RowRefs>();
@@ -136,7 +144,7 @@ function setError(refs: RowRefs, e: Entry): void {
 	refs.err.append(' ', el('button', { type: 'button', class: 'btn small', onclick: () => {
 		if (needsPrefix(prefix, e.customName, e.origName)) {
 			if (validation) {
-				validation.textContent = `A file name prefix is required for: ${e.origName}`;
+				validation.textContent = `Rename this file or add a file name prefix: ${e.origName}`;
 				validation.hidden = false;
 			}
 			return;
@@ -169,6 +177,7 @@ export function patchEntry(e: Entry): void {
 	setName(refs, e);
 	setError(refs, e);
 	syncRowButtons(refs, e);
+	syncNameWarning(refs, e);
 	refreshCopyBar();
 	refreshUploadBtn();
 }
@@ -186,8 +195,10 @@ function copyButton(label: string, getText: () => string): HTMLButtonElement {
 
 function renderRow(e: Entry): HTMLElement {
 	const prefs = getPrefs();
+	const root = el('li', { class: 'file-row' });
 	const status = el('span', { class: 'st' }, statusText(e));
 	const name = el('span', { class: 'fname' });
+	const nameWarning = el('div', { class: 'name-warning', hidden: true }, 'You need to rename this file or use a prefix.');
 	const err = el('div', { class: 'err', hidden: true });
 	const editBtn = el('button', { type: 'button', class: 'btn small', 'aria-label': 'Edit details' }, '✎');
 	const removeBtn = el('button', { type: 'button', class: 'btn small', 'aria-label': 'Remove' }, '×');
@@ -196,11 +207,12 @@ function renderRow(e: Entry): HTMLElement {
 		set: (n) => (e.categories = n),
 		placeholder: 'Extra category for this file…',
 	});
-	const refs: RowRefs = { status, name, err, edit: editBtn, remove: removeBtn, cats: perFileCats };
+	const refs: RowRefs = { root, status, name, nameWarning, err, edit: editBtn, remove: removeBtn, cats: perFileCats };
 	rowRefs.set(e.id, refs);
 	setName(refs, e);
 	setError(refs, e);
 	syncRowButtons(refs, e);
+	syncNameWarning(refs, e);
 
 	const details = el('div', { class: 'details', hidden: true });
 	editBtn.addEventListener('click', () => (details.hidden = !details.hidden));
@@ -225,6 +237,7 @@ function renderRow(e: Entry): HTMLElement {
 				oninput: (ev: Event) => {
 					e.customName = (ev.target as HTMLInputElement).value;
 					setName(refs, e);
+					syncNameWarning(refs, e);
 				},
 			}),
 		);
@@ -266,10 +279,8 @@ function renderRow(e: Entry): HTMLElement {
 		thumb = el('img', { class: 'thumb', src: u, alt: '', loading: 'lazy' });
 	}
 
-	return el(
-		'li',
-		{ class: 'file-row' },
-		thumb,
+	if (thumb) root.append(thumb);
+	root.append(
 		el(
 			'div',
 			{ class: 'rowline' },
@@ -280,9 +291,11 @@ function renderRow(e: Entry): HTMLElement {
 			editBtn,
 			removeBtn,
 		),
+		nameWarning,
 		err,
 		details,
 	);
+	return root;
 }
 
 export function renderFiles(): HTMLElement {
@@ -308,7 +321,10 @@ export function renderFiles(): HTMLElement {
 			prefix = prefixInput.value;
 			for (const e of entries) {
 				const refs = rowRefs.get(e.id);
-				if (refs && (e.status === 'new' || e.status === 'pending' || e.status === 'error')) setName(refs, e);
+				if (refs && (e.status === 'new' || e.status === 'pending' || e.status === 'error')) {
+					setName(refs, e);
+					syncNameWarning(refs, e);
+				}
 			}
 		},
 	});
@@ -397,7 +413,7 @@ export function renderFiles(): HTMLElement {
 		const fresh = entries.filter((e) => e.status === 'new');
 		const missing = fresh.filter((e) => needsPrefix(prefix, e.customName, e.origName));
 		if (missing.length) {
-			validation.textContent = `A file name prefix is required for: ${missing.map((m) => m.origName).join(', ')}`;
+			validation.textContent = `Rename ${missing.length === 1 ? 'this file' : 'these files'} or add a file name prefix: ${missing.map((m) => m.origName).join(', ')}`;
 			validation.hidden = false;
 			return;
 		}

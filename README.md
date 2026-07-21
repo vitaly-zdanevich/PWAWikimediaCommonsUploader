@@ -43,7 +43,8 @@ conversion endpoint for formats Commons rejects).
   so they stay findable for future renaming
 - Default license CC BY 4.0 (changeable); prefixes and categories are saved for reuse
 - Generic file names that Commons rejects (`IMG_*`, `DSC*`, `PXL_*`, UUID-style
-  `05998DD7-…`, `20230101_123456`, digits-only, …) require a prefix
+  `05998DD7-…`, `20230101_123456`, digits-only, …) are highlighted in orange
+  until they are renamed or given a prefix
 - Chunked, resumable uploads: continues after switching apps, going offline, or a device restart (queue and file bytes persist in IndexedDB)
 - Clear red errors from Commons, including links when the file name is taken or an identical file (same SHA1) already exists — after a rename, retry republishes instantly without re-uploading
 - Text-only list with ✅ when uploaded (thumbnails can be enabled in Preferences)

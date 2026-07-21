@@ -8,6 +8,8 @@
 	--accent-fg: #ffffff;
 	--err: #cc0000;
 	--ok: #0a7f2e;
+	--warn: #a35b00;
+	--warn-bg: #fff1dc;
 	--chip: #eaecf0;
 }
 
@@ -20,6 +22,8 @@
 		--accent: #3b82f6;
 		--err: #ff6b6b;
 		--ok: #34c759;
+		--warn: #ffb454;
+		--warn-bg: #2a1800;
 		--chip: #1c1f24;
 	}
 }
@@ -258,6 +262,23 @@ button.sugg {
 .file-row {
 	border-bottom: 1px solid var(--line);
 	padding: 8px 0;
+}
+
+.file-row.needs-name {
+	background: var(--warn-bg);
+	box-shadow: inset 4px 0 0 var(--warn);
+}
+
+.file-row.needs-name .fname {
+	color: var(--warn);
+	font-weight: 600;
+}
+
+.name-warning {
+	color: var(--warn);
+	font-size: 14px;
+	font-weight: 600;
+	margin: 4px 8px 0 26px;
 }
 
 .rowline {

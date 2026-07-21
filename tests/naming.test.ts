@@ -29,6 +29,7 @@ describe('buildFinalName', () => {
 describe('needsPrefix', () => {
 	it('requires a prefix for IMG_ files', () => {
 		expect(needsPrefix('', '', 'IMG_0001.jpg')).toBe(true);
+		expect(needsPrefix('', '', 'IMG_1234.jpg')).toBe(true);
 		expect(needsPrefix('', '', 'img_0001.jpg')).toBe(true);
 	});
 	it('requires a prefix for other generic names Commons rejects', () => {
