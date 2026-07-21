@@ -11,6 +11,10 @@ TOOLFORGE_SSH="${TOOLFORGE_SSH:-${TOOLFORGE_LOGIN}@${TOOLFORGE_HOST}}"
 TOOLFORGE_SSH_CONFIG="${TOOLFORGE_SSH_CONFIG:-}"
 REPO="${REPO:-https://github.com/vitaly-zdanevich/PWAWikimediaCommonsUploader}"
 HEALTH_URL="${HEALTH_URL:-https://${TOOLFORGE_TOOL}.toolforge.org/healthz}"
+VERSION_URL="${VERSION_URL:-https://${TOOLFORGE_TOOL}.toolforge.org/}"
+EXPECTED_VERSION="${EXPECTED_VERSION:-$(node -e \
+  'const fs = require("node:fs"); const data = JSON.parse(fs.readFileSync(process.argv[1], "utf8")); process.stdout.write(data.version);' \
+  "$ROOT_DIR/package.json")}"
 REMOTE_TEMPLATE="/tmp/${TOOLFORGE_TOOL}-service.template.$$"
 
 if [[ ! "$TOOLFORGE_TOOL" =~ ^[a-z0-9-]+$ ]]; then
@@ -44,6 +48,22 @@ ssh "${ssh_args[@]}" "$TOOLFORGE_SSH" "rm -f '$REMOTE_TEMPLATE'"
 echo "==> Building $REPO"
 ssh "${ssh_args[@]}" "$TOOLFORGE_SSH" "become '$TOOLFORGE_TOOL' toolforge build start '$REPO'"
 
+build_summary="$(
+  ssh "${ssh_args[@]}" "$TOOLFORGE_SSH" \
+    "become '$TOOLFORGE_TOOL' toolforge build list --json" |
+    node -e '
+      const fs = require("node:fs");
+      const build = JSON.parse(fs.readFileSync(0, "utf8")).builds?.[0];
+      if (!build) throw new Error("Toolforge returned no builds");
+      process.stdout.write(`${build.status}\t${build.build_id}`);
+    '
+)"
+IFS=$'\t' read -r build_status build_id <<< "$build_summary"
+if [[ "$build_status" != "ok" ]]; then
+  echo "Toolforge build $build_id finished with status '$build_status'; deployment stopped." >&2
+  exit 1
+fi
+
 echo "==> Starting or restarting the buildservice webservice"
 if ssh "${ssh_args[@]}" "$TOOLFORGE_SSH" "become '$TOOLFORGE_TOOL' toolforge webservice status" >/dev/null 2>&1; then
   if ! ssh "${ssh_args[@]}" "$TOOLFORGE_SSH" \
@@ -59,15 +79,30 @@ else
     "become '$TOOLFORGE_TOOL' toolforge webservice --template service.template start"
 fi
 
-echo "==> Waiting for $HEALTH_URL"
+echo "==> Waiting for $HEALTH_URL and version $EXPECTED_VERSION"
+deployed_version="unknown"
 for attempt in $(seq 1 60); do
   if curl -fsS "$HEALTH_URL" >/dev/null 2>&1; then
-    echo "Deployment is healthy."
-    echo "Logs: TOOLFORGE_TOOL=$TOOLFORGE_TOOL ./scripts/toolforge-logs.sh --follow"
-    exit 0
+    if service_json="$(curl -fsS "$VERSION_URL" 2>/dev/null)"; then
+      if parsed_version="$(
+        node -e '
+          const fs = require("node:fs");
+          const version = JSON.parse(fs.readFileSync(0, "utf8")).version;
+          if (typeof version !== "string") process.exit(1);
+          process.stdout.write(version);
+        ' <<< "$service_json" 2>/dev/null
+      )"; then
+        deployed_version="$parsed_version"
+        if [[ "$deployed_version" == "$EXPECTED_VERSION" ]]; then
+          echo "Deployment is healthy and reports version $EXPECTED_VERSION."
+          echo "Logs: TOOLFORGE_TOOL=$TOOLFORGE_TOOL ./scripts/toolforge-logs.sh --follow"
+          exit 0
+        fi
+      fi
+    fi
   fi
   sleep 2
 done
 
-echo "Webservice did not become healthy after 120 seconds." >&2
+echo "Webservice did not become healthy with version $EXPECTED_VERSION after 120 seconds (last reported: $deployed_version)." >&2
 exit 1

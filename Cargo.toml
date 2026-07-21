@@ -1,6 +1,6 @@
 [package]
 name = "commons-format-converter"
-version = "1.1.8"
+version = "1.1.9"
 edition = "2024"
 rust-version = "1.85"
 description = "Toolforge conversion and upload service for the PWA Wikimedia Commons Uploader"
