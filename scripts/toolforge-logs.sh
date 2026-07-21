@@ -19,6 +19,7 @@ Environment:
   TOOLFORGE_TOOL        tool account (default: pwa-commons-uploader-converter)
   TOOLFORGE_DEPLOYMENT  Kubernetes deployment (default: TOOLFORGE_TOOL)
   TOOLFORGE_SSH         full SSH target override
+  TOOLFORGE_SSH_CONFIG  SSH config file override
   ERROR_PATTERN         extended regular expression used by --errors
 EOF
 }
@@ -28,6 +29,7 @@ TOOLFORGE_HOST="${TOOLFORGE_HOST:-login.toolforge.org}"
 TOOLFORGE_TOOL="${TOOLFORGE_TOOL:-pwa-commons-uploader-converter}"
 TOOLFORGE_DEPLOYMENT="${TOOLFORGE_DEPLOYMENT:-$TOOLFORGE_TOOL}"
 TOOLFORGE_SSH="${TOOLFORGE_SSH:-${TOOLFORGE_LOGIN}@${TOOLFORGE_HOST}}"
+TOOLFORGE_SSH_CONFIG="${TOOLFORGE_SSH_CONFIG:-}"
 KUBECTL_GOMAXPROCS="${KUBECTL_GOMAXPROCS:-2}"
 ERROR_PATTERN="${ERROR_PATTERN:-error|panic|failed|warn|exception}"
 TAIL="${TAIL:-200}"
@@ -58,6 +60,19 @@ if [[ ! "$TOOLFORGE_TOOL" =~ ^[a-z0-9-]+$ ]]; then
   exit 2
 fi
 
+ssh_args=()
+if [[ -n "$TOOLFORGE_SSH_CONFIG" ]]; then
+  ssh_args=(-F "$TOOLFORGE_SSH_CONFIG")
+else
+  for ssh_config_path in /etc/ssh/ssh_config /etc/ssh/ssh_config.d/*; do
+    [[ -e "$ssh_config_path" ]] || continue
+    if [[ "$(stat -c %u "$ssh_config_path" 2>/dev/null || printf 0)" != 0 ]]; then
+      ssh_args=(-F /dev/null)
+      break
+    fi
+  done
+fi
+
 log_args=(logs "deploy/$TOOLFORGE_DEPLOYMENT")
 if [[ -n "$TAIL" ]]; then
   log_args+=("--tail=$TAIL")
@@ -72,7 +87,7 @@ fi
 if [[ "$LOCAL" == 1 ]]; then
   command=(env "GOMAXPROCS=$KUBECTL_GOMAXPROCS" kubectl "${log_args[@]}")
 else
-  command=(ssh "$TOOLFORGE_SSH" become "$TOOLFORGE_TOOL" env \
+  command=(ssh "${ssh_args[@]}" "$TOOLFORGE_SSH" become "$TOOLFORGE_TOOL" env \
     "GOMAXPROCS=$KUBECTL_GOMAXPROCS" kubectl "${log_args[@]}")
 fi
 
