@@ -1,0 +1,6 @@
+# Toolforge's custom Rust buildpack group currently selects fagiani/apt.
+ffmpeg
+imagemagick
+libheif1
+libraw-bin
+libvips-tools

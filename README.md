@@ -174,7 +174,8 @@ Create or join the Toolforge tool account, then deploy the latest pushed `main` 
 
 The script uploads `toolforge/service.template`, starts a Toolforge Build Service build
 from GitHub, starts or restarts the webservice, and waits for `/healthz`. `project.toml`
-installs FFmpeg, libvips, ImageMagick, LibRaw and HEIF runtime support in the image.
+declares FFmpeg, libvips, ImageMagick, LibRaw and HEIF runtime support; `Aptfile`
+provides the same packages for Toolforge's custom Rust buildpack group.
 The service listens on `0.0.0.0:$PORT`, as required by Toolforge.
 
 Read recent logs or follow them from the local checkout:
