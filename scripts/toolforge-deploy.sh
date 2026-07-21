@@ -48,6 +48,9 @@ echo "==> Starting or restarting the buildservice webservice"
 if ssh "${ssh_args[@]}" "$TOOLFORGE_SSH" "become '$TOOLFORGE_TOOL' toolforge webservice status" >/dev/null 2>&1; then
   if ! ssh "${ssh_args[@]}" "$TOOLFORGE_SSH" \
     "become '$TOOLFORGE_TOOL' toolforge webservice --template service.template restart"; then
+    echo "Rolling restart failed; stopping the existing service to release its quota."
+    ssh "${ssh_args[@]}" "$TOOLFORGE_SSH" \
+      "become '$TOOLFORGE_TOOL' toolforge webservice stop"
     ssh "${ssh_args[@]}" "$TOOLFORGE_SSH" \
       "become '$TOOLFORGE_TOOL' toolforge webservice --template service.template start"
   fi
