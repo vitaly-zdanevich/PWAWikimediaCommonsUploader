@@ -135,7 +135,7 @@ dependencies = [
 
 [[package]]
 name = "commons-format-converter"
-version = "1.1.0"
+version = "1.1.1"
 dependencies = [
  "anyhow",
  "axum",
