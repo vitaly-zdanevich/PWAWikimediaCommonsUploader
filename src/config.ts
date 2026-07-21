@@ -12,8 +12,7 @@ export const WDQS_URL = 'https://query.wikidata.org/sparql';
 // Can also be set at runtime in Preferences without rebuilding.
 export const DEFAULT_OAUTH_CLIENT_ID = '2260471694b45464c738bf0a5f4fe830';
 
-// Override in Preferences when deploying the converter under another tool name.
-export const DEFAULT_CONVERSION_URL = 'https://pwa-commons-uploader.toolforge.org/convert';
+export const CONVERSION_URL = 'https://pwa-commons-uploader-converter.toolforge.org/convert';
 
 export const PWA_CATEGORY = 'Uploaded by PWA from Vitaly Zdanevich';
 

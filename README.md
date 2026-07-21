@@ -113,8 +113,8 @@ adapted from
 compatible streams are copied into a Commons container, and only incompatible streams
 are transcoded. AV1 encoding tries SVT-AV1 first and falls back to libaom.
 
-The PWA `POST`s `multipart/form-data` to the URL set in Preferences. The default is
-`https://pwa-commons-uploader.toolforge.org/convert`. Fields must be in this order so
+The PWA `POST`s `multipart/form-data` to
+`https://pwa-commons-uploader-converter.toolforge.org/convert`. Fields must be in this order so
 the service can authenticate before accepting a large body; `file` is last:
 
 | field      | value                                            |
@@ -169,7 +169,7 @@ Safari 14+ (works on iOS 15). Running the converter locally also requires `ffmpe
 Create or join the Toolforge tool account, then deploy the latest pushed `main` branch:
 
 ```sh
-TOOLFORGE_TOOL=pwa-commons-uploader ./scripts/toolforge-deploy.sh
+./scripts/toolforge-deploy.sh
 ```
 
 The script uploads `toolforge/service.template`, starts a Toolforge Build Service build

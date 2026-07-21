@@ -16,7 +16,7 @@ Options:
 Environment:
   TOOLFORGE_LOGIN       SSH login (default: vitaly-zdanevich)
   TOOLFORGE_HOST        SSH host (default: login.toolforge.org)
-  TOOLFORGE_TOOL        tool account (default: pwa-commons-uploader)
+  TOOLFORGE_TOOL        tool account (default: pwa-commons-uploader-converter)
   TOOLFORGE_DEPLOYMENT  Kubernetes deployment (default: TOOLFORGE_TOOL)
   TOOLFORGE_SSH         full SSH target override
   ERROR_PATTERN         extended regular expression used by --errors
@@ -25,7 +25,7 @@ EOF
 
 TOOLFORGE_LOGIN="${TOOLFORGE_LOGIN:-vitaly-zdanevich}"
 TOOLFORGE_HOST="${TOOLFORGE_HOST:-login.toolforge.org}"
-TOOLFORGE_TOOL="${TOOLFORGE_TOOL:-pwa-commons-uploader}"
+TOOLFORGE_TOOL="${TOOLFORGE_TOOL:-pwa-commons-uploader-converter}"
 TOOLFORGE_DEPLOYMENT="${TOOLFORGE_DEPLOYMENT:-$TOOLFORGE_TOOL}"
 TOOLFORGE_SSH="${TOOLFORGE_SSH:-${TOOLFORGE_LOGIN}@${TOOLFORGE_HOST}}"
 KUBECTL_GOMAXPROCS="${KUBECTL_GOMAXPROCS:-2}"

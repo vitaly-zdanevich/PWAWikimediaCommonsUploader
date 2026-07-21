@@ -158,15 +158,6 @@ export function renderPrefs(): HTMLElement {
 		),
 	);
 
-	root.append(
-		section(
-			'Conversion endpoint',
-			el('input', { type: 'url', value: prefs.conversionUrl, placeholder: 'https://tool-name.toolforge.org/convert', autocapitalize: 'off', onchange: (ev: Event) =>
-				savePrefs({ conversionUrl: (ev.target as HTMLInputElement).value.trim() }) }),
-			el('p', { class: 'muted' }, 'Formats Commons rejects (HEIC, AVIF, camera RAW, H.264/H.265…) are sent here for conversion and upload.'),
-		),
-	);
-
 	root.append(section('Saved prefixes', historyChips(prefs.prefixes, (next) => savePrefs({ prefixes: next }))));
 	root.append(section('Saved categories', historyChips(prefs.categories, (next) => savePrefs({ categories: next }))));
 

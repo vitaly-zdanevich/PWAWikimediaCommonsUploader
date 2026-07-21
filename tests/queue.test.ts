@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { RateLimitError } from '../src/apierrors';
+import { CONVERSION_URL } from '../src/config';
 import type { Entry } from '../src/types';
 import { stubBrowserStorage } from './stubs';
 
@@ -24,7 +25,7 @@ vi.mock('../src/keepawake', () => ({ keepAwake: vi.fn() }));
 
 import { editPage, pageLastEdit, publishStash, titleExists, uploadChunk } from '../src/api';
 import { dbAll, dbPut } from '../src/idb';
-import { savePrefs, upsertAccount } from '../src/prefs';
+import { upsertAccount } from '../src/prefs';
 import { addFiles, doneEntries, entries, restoreFromDb, resume, retryEntry, startUploads, updateOnCommons } from '../src/queue';
 
 const upload = vi.mocked(uploadChunk);
@@ -104,7 +105,6 @@ describe('queue happy path', () => {
 	});
 
 	it('sends authenticated metadata before conversion input and uses the returned extension', async () => {
-		savePrefs({ conversionUrl: 'https://converter.test/convert' });
 		upsertAccount({
 			username: 'Vitaly Zdanevich',
 			accessToken: 'ACCESS_TOKEN',
@@ -130,7 +130,7 @@ describe('queue happy path', () => {
 		startUploads('Vitaly Zdanevich', '', []);
 		await vi.waitFor(() => expect(entries[0].status).toBe('done'));
 
-		expect(convertedFetch).toHaveBeenCalledWith('https://converter.test/convert', expect.objectContaining({ method: 'POST' }));
+		expect(convertedFetch).toHaveBeenCalledWith(CONVERSION_URL, expect.objectContaining({ method: 'POST' }));
 		expect(entries[0].finalName).toBe('Batumi panorama.webp');
 		expect(upload).not.toHaveBeenCalled();
 	});
@@ -234,7 +234,6 @@ describe('interruptions', () => {
 
 	it('converter busy response waits and retries the original file', async () => {
 		vi.useFakeTimers();
-		savePrefs({ conversionUrl: 'https://converter.test/convert' });
 		upsertAccount({
 			username: 'U',
 			accessToken: 'ACCESS_TOKEN',

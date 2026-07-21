@@ -1,6 +1,6 @@
 import { ApiError, RateLimitError, filePageUrl } from './apierrors';
 import { editPage, getCsrfToken, pageLastEdit, publishStash, titleExists, uploadChunk } from './api';
-import { CHUNK_SIZE, PWA_CATEGORY, UPLOAD_COMMENT } from './config';
+import { CHUNK_SIZE, CONVERSION_URL, PWA_CATEGORY, UPLOAD_COMMENT } from './config';
 import { readJpegMeta } from './exif';
 import { dbAll, dbDelete, dbPut } from './idb';
 import { keepAwake } from './keepawake';
@@ -320,12 +320,6 @@ export async function updateOnCommons(id: string): Promise<void> {
 class SkipError extends Error {}
 
 async function conversionUpload(e: Entry): Promise<void> {
-	const url = getPrefs().conversionUrl.trim();
-	if (!url) {
-		throw new Error(
-			'This format is not supported by Wikimedia Commons and needs conversion; set the conversion endpoint URL in Preferences',
-		);
-	}
 	if (!e.file) throw new Error('The file data is no longer available; remove and select it again');
 	const acc = getAccount(e.username);
 	if (!acc) throw new Error(`Not signed in as ${e.username}`);
@@ -339,7 +333,7 @@ async function conversionUpload(e: Entry): Promise<void> {
 	fd.set('text', entryWikitext(e));
 	fd.set('comment', UPLOAD_COMMENT);
 	fd.set('file', e.file, e.origName);
-	const res = await fetch(url, { method: 'POST', body: fd });
+	const res = await fetch(CONVERSION_URL, { method: 'POST', body: fd });
 	const json = (await res.json().catch(() => ({}))) as {
 		error?: string;
 		pageUrl?: string;
