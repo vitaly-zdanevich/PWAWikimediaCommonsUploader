@@ -1,4 +1,4 @@
-import { fetchNearbyCategories, formatDistance, type NearbyCategory } from '../geo';
+import { fetchClosestCategories, formatDistance, type NearbyCategory } from '../geo';
 import { buildFinalName, namifyBase, needsPrefix } from '../naming';
 import { rerender } from './app';
 import { getActiveAccount, getPrefs } from '../prefs';
@@ -29,8 +29,8 @@ let exifSuggKey = '';
 let suggRow: HTMLElement | null = null;
 let catInputRef: { refresh(): void } | null = null;
 
-function firstGpsEntry(): Entry | undefined {
-	return entries.find((e) => e.lat !== undefined && e.lon !== undefined);
+function firstNewGpsEntry(): Entry | undefined {
+	return entries.find((e) => e.status === 'new' && e.lat !== undefined && e.lon !== undefined);
 }
 
 function addGlobalCat(c: string): void {
@@ -46,7 +46,7 @@ function renderSuggRow(): void {
 		.slice(0, 6);
 	suggRow.hidden = items.length === 0;
 	if (!items.length) return;
-	suggRow.append(el('span', { class: 'muted' }, 'Near photo: '));
+	suggRow.append(el('span', { class: 'muted' }, 'Closest to photo: '));
 	for (const s of items) {
 		suggRow.append(
 			el('button', { type: 'button', class: 'sugg', title: formatDistance(s.distanceM), onclick: () => {
@@ -58,7 +58,7 @@ function renderSuggRow(): void {
 }
 
 async function refreshExifSuggestions(): Promise<void> {
-	const e = firstGpsEntry();
+	const e = firstNewGpsEntry();
 	if (!e || e.lat === undefined || e.lon === undefined) {
 		exifSuggestions = [];
 		exifSuggKey = '';
@@ -71,9 +71,14 @@ async function refreshExifSuggestions(): Promise<void> {
 		return;
 	}
 	exifSuggKey = key;
+	exifSuggestions = [];
+	renderSuggRow();
 	try {
-		exifSuggestions = await fetchNearbyCategories(e.lat, e.lon, 1);
+		const items = await fetchClosestCategories(e.lat, e.lon);
+		if (exifSuggKey !== key) return;
+		exifSuggestions = items;
 	} catch {
+		if (exifSuggKey !== key) return;
 		exifSuggestions = [];
 	}
 	renderSuggRow();
@@ -442,7 +447,7 @@ export function renderFiles(): HTMLElement {
 			'Categories',
 			catInput.root,
 			el('button', { type: 'button', class: 'btn small', onclick: () => {
-				const gps = firstGpsEntry();
+				const gps = firstNewGpsEntry();
 				openNearby({
 					has: (c) => globalCats.some((x) => x.toLowerCase() === c.toLowerCase()),
 					add: (c) => {

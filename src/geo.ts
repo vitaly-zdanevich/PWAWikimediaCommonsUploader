@@ -77,3 +77,12 @@ export async function fetchNearbyCategories(
 	}
 	return [...byCat.values()].sort((a, b) => a.distanceM - b.distanceM);
 }
+
+/** Finds the nearest available categories without making sparse areas look empty. */
+export async function fetchClosestCategories(lat: number, lon: number): Promise<NearbyCategory[]> {
+	for (const radiusKm of [1, 5, 25]) {
+		const items = await fetchNearbyCategories(lat, lon, radiusKm);
+		if (items.length) return items;
+	}
+	return [];
+}
