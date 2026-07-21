@@ -1,1 +1,1 @@
-web: ./target/release/commons-format-converter
+web: ./scripts/start-converter.sh
