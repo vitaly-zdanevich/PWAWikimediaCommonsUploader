@@ -8,6 +8,7 @@ TOOLFORGE_LOGIN="${TOOLFORGE_LOGIN:-vitaly-zdanevich}"
 TOOLFORGE_HOST="${TOOLFORGE_HOST:-login.toolforge.org}"
 TOOLFORGE_TOOL="${TOOLFORGE_TOOL:-pwa-commons-uploader-converter}"
 TOOLFORGE_SSH="${TOOLFORGE_SSH:-${TOOLFORGE_LOGIN}@${TOOLFORGE_HOST}}"
+TOOLFORGE_SSH_CONFIG="${TOOLFORGE_SSH_CONFIG:-}"
 REPO="${REPO:-https://github.com/vitaly-zdanevich/PWAWikimediaCommonsUploader}"
 HEALTH_URL="${HEALTH_URL:-https://${TOOLFORGE_TOOL}.toolforge.org/healthz}"
 REMOTE_TEMPLATE="/tmp/${TOOLFORGE_TOOL}-service.template.$$"
@@ -21,24 +22,37 @@ if [[ "$REPO" == *"'"* ]]; then
   exit 2
 fi
 
+ssh_args=()
+if [[ -n "$TOOLFORGE_SSH_CONFIG" ]]; then
+  ssh_args=(-F "$TOOLFORGE_SSH_CONFIG")
+else
+  for ssh_config_path in /etc/ssh/ssh_config /etc/ssh/ssh_config.d/*; do
+    [[ -e "$ssh_config_path" ]] || continue
+    if [[ "$(stat -c %u "$ssh_config_path" 2>/dev/null || printf 0)" != 0 ]]; then
+      ssh_args=(-F /dev/null)
+      break
+    fi
+  done
+fi
+
 echo "==> Installing service.template for $TOOLFORGE_TOOL"
-scp "$ROOT_DIR/toolforge/service.template" "$TOOLFORGE_SSH:$REMOTE_TEMPLATE"
-ssh "$TOOLFORGE_SSH" \
+scp "${ssh_args[@]}" "$ROOT_DIR/toolforge/service.template" "$TOOLFORGE_SSH:$REMOTE_TEMPLATE"
+ssh "${ssh_args[@]}" "$TOOLFORGE_SSH" \
   "become '$TOOLFORGE_TOOL' install -m 600 '$REMOTE_TEMPLATE' '/data/project/$TOOLFORGE_TOOL/service.template'"
-ssh "$TOOLFORGE_SSH" "rm -f '$REMOTE_TEMPLATE'"
+ssh "${ssh_args[@]}" "$TOOLFORGE_SSH" "rm -f '$REMOTE_TEMPLATE'"
 
 echo "==> Building $REPO"
-ssh "$TOOLFORGE_SSH" "become '$TOOLFORGE_TOOL' toolforge build start '$REPO'"
+ssh "${ssh_args[@]}" "$TOOLFORGE_SSH" "become '$TOOLFORGE_TOOL' toolforge build start '$REPO'"
 
 echo "==> Starting or restarting the buildservice webservice"
-if ssh "$TOOLFORGE_SSH" "become '$TOOLFORGE_TOOL' toolforge webservice status" >/dev/null 2>&1; then
-  if ! ssh "$TOOLFORGE_SSH" \
+if ssh "${ssh_args[@]}" "$TOOLFORGE_SSH" "become '$TOOLFORGE_TOOL' toolforge webservice status" >/dev/null 2>&1; then
+  if ! ssh "${ssh_args[@]}" "$TOOLFORGE_SSH" \
     "become '$TOOLFORGE_TOOL' toolforge webservice --template service.template restart"; then
-    ssh "$TOOLFORGE_SSH" \
+    ssh "${ssh_args[@]}" "$TOOLFORGE_SSH" \
       "become '$TOOLFORGE_TOOL' toolforge webservice --template service.template start"
   fi
 else
-  ssh "$TOOLFORGE_SSH" \
+  ssh "${ssh_args[@]}" "$TOOLFORGE_SSH" \
     "become '$TOOLFORGE_TOOL' toolforge webservice --template service.template start"
 fi
 

@@ -185,8 +185,8 @@ Read recent logs or follow them from the local checkout:
 ./scripts/toolforge-logs.sh --follow
 ```
 
-Set `TOOLFORGE_LOGIN`, `TOOLFORGE_HOST`, `TOOLFORGE_TOOL`, or `TOOLFORGE_SSH` when
-the defaults do not match the deployment.
+Set `TOOLFORGE_LOGIN`, `TOOLFORGE_HOST`, `TOOLFORGE_TOOL`, `TOOLFORGE_SSH`, or
+`TOOLFORGE_SSH_CONFIG` when the defaults do not match the deployment.
 
 ## Versioning and deployment
 
