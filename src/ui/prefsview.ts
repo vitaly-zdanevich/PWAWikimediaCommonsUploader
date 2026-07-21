@@ -161,9 +161,9 @@ export function renderPrefs(): HTMLElement {
 	root.append(
 		section(
 			'Conversion endpoint',
-			el('input', { type: 'url', value: prefs.lambdaUrl, placeholder: 'https://….lambda-url.….on.aws/', autocapitalize: 'off', onchange: (ev: Event) =>
-				savePrefs({ lambdaUrl: (ev.target as HTMLInputElement).value.trim() }) }),
-			el('p', { class: 'muted' }, 'Formats Commons rejects (HEIC, H.264/H.265…) are sent here for conversion and upload.'),
+			el('input', { type: 'url', value: prefs.conversionUrl, placeholder: 'https://tool-name.toolforge.org/convert', autocapitalize: 'off', onchange: (ev: Event) =>
+				savePrefs({ conversionUrl: (ev.target as HTMLInputElement).value.trim() }) }),
+			el('p', { class: 'muted' }, 'Formats Commons rejects (HEIC, AVIF, camera RAW, H.264/H.265…) are sent here for conversion and upload.'),
 		),
 	);
 

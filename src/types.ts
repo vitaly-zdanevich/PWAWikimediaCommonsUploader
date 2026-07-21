@@ -51,5 +51,7 @@ export interface Entry {
 	progressText?: string;
 	pageUrl?: string;
 	fileUrl?: string;
-	viaLambda: boolean;
+	viaConversion: boolean;
+	/** Read only while migrating queue records saved before v1.1.0. */
+	viaLambda?: boolean;
 }

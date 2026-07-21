@@ -15,8 +15,8 @@
 A small, fast, framework-free PWA that uploads photos and videos to
 [Wikimedia Commons](https://commons.wikimedia.org/). Works offline, installs to the
 home screen (full screen), survives app/device restarts mid-upload, and runs fully
-in the browser — the only server involved is Wikimedia itself (plus an optional
-conversion endpoint for formats Commons rejects).
+in the browser for Commons-supported formats. Unsupported image and video formats
+use the companion Rust conversion service on Wikimedia Toolforge.
 
 **App:** https://vitaly-zdanevich.github.io/PWAWikimediaCommonsUploader/
 
@@ -53,7 +53,9 @@ conversion endpoint for formats Commons rejects).
   "Update on Commons" — refused if anyone else edited the page since, to never
   overwrite their work (renaming is excluded: it needs the filemover right)
 - After uploading: copy the list of direct file URLs or Commons page URLs (one per line)
-- HEIC / H.264 / H.265 files are sent to a configurable conversion endpoint (AWS Lambda)
+- HEIC/HEIF, AVIF, BMP, camera RAW and other unsupported images are converted to
+  WebP; MP4/MOV and other unsupported videos are remuxed when their codecs are
+  already compatible, or converted to WebM with AV1 video and Opus audio
 - Dark mode with pure `#000` background (`prefers-color-scheme`)
 - Every upload gets the hidden tracking category `Uploaded by PWA from Vitaly Zdanevich` on the last line of the wikitext
 
@@ -101,20 +103,46 @@ conversion endpoint for formats Commons rejects).
 2. Open the app → ⚙ Preferences → paste the **client ID** (or set `DEFAULT_OAUTH_CLIENT_ID` in `src/config.ts`).
 3. Sign in.
 
-## Conversion endpoint contract (AWS Lambda, to be developed)
+## Conversion service
 
-The app `POST`s `multipart/form-data` to the URL set in Preferences:
+The implemented companion service is a Rust/Axum binary in `converter/`. It streams
+incoming files to bounded temporary storage, limits concurrent conversions, and uses
+libvips with an ImageMagick fallback for still images. Its FFmpeg decision logic is
+adapted from
+[bot_telegram_wikimedia_commons_uploader](https://github.com/vitaly-zdanevich/bot_telegram_wikimedia_commons_uploader):
+compatible streams are copied into a Commons container, and only incompatible streams
+are transcoded. AV1 encoding tries SVT-AV1 first and falls back to libaom.
+
+The PWA `POST`s `multipart/form-data` to the URL set in Preferences. The default is
+`https://pwa-commons-uploader.toolforge.org/convert`. Fields must be in this order so
+the service can authenticate before accepting a large body; `file` is last:
 
 | field      | value                                            |
 | ---------- | ------------------------------------------------ |
-| `file`     | the original file (HEIC/MP4/MOV/…)               |
+| `token`    | the user's OAuth 2 access token (Bearer)         |
 | `filename` | desired Commons file name (extension may change) |
 | `text`     | ready wikitext for the file page                 |
 | `comment`  | upload comment                                   |
-| `token`    | the user's OAuth 2 access token (Bearer)         |
+| `file`     | the original file (HEIC/MP4/MOV/…)               |
 
-The Lambda converts (HEIC→JPEG, H.264/H.265→WebM/VP9), uploads to Commons with the
-token, and replies `200 {"pageUrl": "...", "fileUrl": "..."}` or `{"error": "message"}`.
+The service validates the token against Commons, converts into a supported format,
+uploads in 16 MiB chunks with the supplied wikitext unchanged, and immediately removes
+its temporary files. It does not persist or log OAuth tokens. A successful response is
+`{"fileName":"Photo.webp","pageUrl":"...","fileUrl":"..."}`; errors are
+`{"error":"message"}`. The final filename matters because conversion replaces the
+original extension with `.webp`, `.webm`, `.ogv`, or an accepted audio extension.
+
+Configuration variables:
+
+| variable | default | purpose |
+| --- | ---: | --- |
+| `PORT` | `8000` | HTTP listen port (Toolforge sets this) |
+| `MAX_UPLOAD_MB` | `120` | maximum incoming file size (below Toolforge's 128 MiB proxy ceiling) |
+| `MAX_IMAGE_PIXELS` | `200000000` | decoded image safety limit |
+| `CONVERSION_TIMEOUT_SECONDS` | `3600` | timeout for each converter process |
+| `CONVERSION_CONCURRENCY` | `1` | simultaneous buffered conversions/uploads |
+| `IMAGE_QUALITY` | `92` | lossy WebP quality |
+| `COMMONS_API_TIMEOUT_SECONDS` | `300` | timeout for each Commons API request |
 
 ## Development
 
@@ -126,9 +154,39 @@ npm run typecheck  # tsc --noEmit
 npm test           # vitest
 npm run build      # vite build + HTML minification + service worker generation
 npm run icons      # regenerate PNG/ICO icons from public/icons/icon.svg
+
+cargo test --locked            # Rust unit tests
+cargo run --locked             # converter at http://localhost:8000
 ```
 
-No runtime dependencies; TypeScript, built with Vite targeting Safari 14+ (works on iOS 15).
+The frontend has no runtime dependencies; TypeScript is built with Vite targeting
+Safari 14+ (works on iOS 15). Running the converter locally also requires `ffmpeg`,
+`libvips-tools`, `imagemagick`, `libraw-bin`, and HEIF support. Health check:
+`curl http://localhost:8000/healthz`.
+
+## Toolforge deployment
+
+Create or join the Toolforge tool account, then deploy the latest pushed `main` branch:
+
+```sh
+TOOLFORGE_TOOL=pwa-commons-uploader ./scripts/toolforge-deploy.sh
+```
+
+The script uploads `toolforge/service.template`, starts a Toolforge Build Service build
+from GitHub, starts or restarts the webservice, and waits for `/healthz`. `project.toml`
+installs FFmpeg, libvips, ImageMagick, LibRaw and HEIF runtime support in the image.
+The service listens on `0.0.0.0:$PORT`, as required by Toolforge.
+
+Read recent logs or follow them from the local checkout:
+
+```sh
+./scripts/toolforge-logs.sh
+./scripts/toolforge-logs.sh --since 30m --errors
+./scripts/toolforge-logs.sh --follow
+```
+
+Set `TOOLFORGE_LOGIN`, `TOOLFORGE_HOST`, `TOOLFORGE_TOOL`, or `TOOLFORGE_SSH` when
+the defaults do not match the deployment.
 
 ## Versioning and deployment
 

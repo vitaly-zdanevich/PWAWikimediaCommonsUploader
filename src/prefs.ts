@@ -1,10 +1,10 @@
-import { DEFAULT_OAUTH_CLIENT_ID } from './config';
+import { DEFAULT_CONVERSION_URL, DEFAULT_OAUTH_CLIENT_ID } from './config';
 import type { Account, LicenseId } from './types';
 
 export interface Prefs {
 	defaultLicense: LicenseId;
 	showThumbs: boolean;
-	lambdaUrl: string;
+	conversionUrl: string;
 	clientId: string;
 	prefixes: string[];
 	categories: string[];
@@ -17,7 +17,7 @@ const HISTORY_CAP = 30;
 const defaults: Prefs = {
 	defaultLicense: 'cc-by-4.0',
 	showThumbs: false,
-	lambdaUrl: '',
+	conversionUrl: DEFAULT_CONVERSION_URL,
 	clientId: DEFAULT_OAUTH_CLIENT_ID,
 	prefixes: [],
 	categories: [],
@@ -33,9 +33,22 @@ function readJson<T>(key: string, fallback: T): T {
 }
 
 export function getPrefs(): Prefs {
-	const p = readJson(PREFS_KEY, defaults);
+	let stored: (Partial<Prefs> & { lambdaUrl?: string }) | null = null;
+	try {
+		const raw = localStorage.getItem(PREFS_KEY);
+		stored = raw ? JSON.parse(raw) as Partial<Prefs> & { lambdaUrl?: string } : null;
+	} catch {
+		stored = null;
+	}
+	const p: Prefs = {
+		...defaults,
+		...stored,
+		// Preserve endpoints saved by releases that called this setting lambdaUrl.
+		conversionUrl: stored?.conversionUrl ?? stored?.lambdaUrl ?? DEFAULT_CONVERSION_URL,
+	};
 	// an empty saved value must not mask the built-in client ID
 	if (!p.clientId) p.clientId = DEFAULT_OAUTH_CLIENT_ID;
+	if (!p.conversionUrl) p.conversionUrl = DEFAULT_CONVERSION_URL;
 	return p;
 }
 

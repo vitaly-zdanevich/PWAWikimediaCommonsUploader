@@ -317,7 +317,7 @@ function renderRow(e: Entry): HTMLElement {
 			status,
 			name,
 			el('span', { class: 'muted size' }, fmtSize(e.size)),
-			e.viaLambda ? el('span', { class: 'badge', title: 'Not supported by Commons; sent via conversion endpoint' }, 'convert') : null,
+			e.viaConversion ? el('span', { class: 'badge', title: 'Not supported by Commons; sent via conversion endpoint' }, 'convert') : null,
 			editBtn,
 			removeBtn,
 		),

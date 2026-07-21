@@ -43,7 +43,7 @@ export function addFiles(files: ArrayLike<File>): void {
 			globalCats: [],
 			status: 'new',
 			offset: 0,
-			viaLambda: requiresConversion(f.name),
+			viaConversion: requiresConversion(f.name),
 		};
 		entries.push(entry);
 		if (f.type === 'image/jpeg' || /\.jpe?g$/i.test(f.name)) {
@@ -89,6 +89,8 @@ export async function restoreFromDb(): Promise<void> {
 	stored.sort((a, b) => a.seq - b.seq);
 	for (const e of stored) {
 		if (e.status === 'uploading') e.status = 'pending';
+		e.viaConversion = e.viaConversion ?? e.viaLambda ?? requiresConversion(e.origName);
+		delete e.viaLambda;
 		e.seq = ++seq;
 		entries.push(e);
 	}
@@ -171,11 +173,11 @@ function fail(e: Entry, message: string, links?: Entry['errorLinks']): void {
 /** Returns true when the queue should halt and wait for network/visibility events. */
 async function processEntry(e: Entry): Promise<boolean> {
 	e.status = 'uploading';
-	e.progressText = e.viaLambda ? 'converting…' : '0%';
+	e.progressText = e.viaConversion ? 'converting…' : '0%';
 	onUpdate(e);
 	try {
-		if (e.viaLambda) {
-			await lambdaUpload(e);
+		if (e.viaConversion) {
+			await conversionUpload(e);
 		} else {
 			await commonsUpload(e);
 		}
@@ -317,8 +319,8 @@ export async function updateOnCommons(id: string): Promise<void> {
 /** Thrown after fail() already recorded a detailed error, so processEntry keeps it. */
 class SkipError extends Error {}
 
-async function lambdaUpload(e: Entry): Promise<void> {
-	const url = getPrefs().lambdaUrl.trim();
+async function conversionUpload(e: Entry): Promise<void> {
+	const url = getPrefs().conversionUrl.trim();
 	if (!url) {
 		throw new Error(
 			'This format is not supported by Wikimedia Commons and needs conversion; set the conversion endpoint URL in Preferences',
@@ -330,18 +332,27 @@ async function lambdaUpload(e: Entry): Promise<void> {
 	const fresh = await ensureFresh(acc);
 	e.finalName = buildFinalName(e.prefix, e.customName, e.origName);
 	const fd = new FormData();
-	fd.set('file', e.file, e.origName);
+	// The converter authenticates before accepting a potentially large file, so
+	// metadata must precede the final file field.
+	fd.set('token', fresh.accessToken);
 	fd.set('filename', e.finalName);
 	fd.set('text', entryWikitext(e));
 	fd.set('comment', UPLOAD_COMMENT);
-	fd.set('token', fresh.accessToken);
+	fd.set('file', e.file, e.origName);
 	const res = await fetch(url, { method: 'POST', body: fd });
 	const json = (await res.json().catch(() => ({}))) as {
 		error?: string;
 		pageUrl?: string;
 		fileUrl?: string;
+		fileName?: string;
 	};
+	if (res.status === 429) {
+		const retryAfter = Number(res.headers.get('retry-after'));
+		throw new RateLimitError(Number.isFinite(retryAfter) && retryAfter > 0 ? retryAfter : 300);
+	}
 	if (!res.ok || json.error) throw new Error(json.error || `Conversion endpoint failed (HTTP ${res.status})`);
+	if (!json.fileName) throw new Error('Conversion endpoint did not return the uploaded filename');
+	e.finalName = json.fileName;
 	e.pageUrl = json.pageUrl;
 	e.fileUrl = json.fileUrl;
 	e.file = null;

@@ -24,6 +24,7 @@ vi.mock('../src/keepawake', () => ({ keepAwake: vi.fn() }));
 
 import { editPage, pageLastEdit, publishStash, titleExists, uploadChunk } from '../src/api';
 import { dbAll, dbPut } from '../src/idb';
+import { savePrefs, upsertAccount } from '../src/prefs';
 import { addFiles, doneEntries, entries, restoreFromDb, resume, retryEntry, startUploads, updateOnCommons } from '../src/queue';
 
 const upload = vi.mocked(uploadChunk);
@@ -100,6 +101,38 @@ describe('queue happy path', () => {
 
 		expect(upload.mock.calls[0][0].fileName).toBe('Batumi sunset.jpg');
 		expect(publish.mock.calls[0][0].fileName).toBe('Batumi sunset.jpg');
+	});
+
+	it('sends authenticated metadata before conversion input and uses the returned extension', async () => {
+		savePrefs({ conversionUrl: 'https://converter.test/convert' });
+		upsertAccount({
+			username: 'Vitaly Zdanevich',
+			accessToken: 'ACCESS_TOKEN',
+			refreshToken: 'REFRESH_TOKEN',
+			expiresAt: Date.now() + 60 * 60 * 1000,
+		});
+		const convertedFetch = vi.fn(async (_input: string | URL | Request, init?: RequestInit) => {
+			const form = init?.body as FormData;
+			expect(Array.from(form.keys())).toEqual(['token', 'filename', 'text', 'comment', 'file']);
+			expect(form.get('token')).toBe('ACCESS_TOKEN');
+			expect(form.get('filename')).toBe('Batumi panorama.HEIC');
+			expect(form.get('text')).toContain('[[Category:Panoramas of Batumi]]');
+			return new Response(JSON.stringify({
+				fileName: 'Batumi panorama.webp',
+				pageUrl: 'https://commons.wikimedia.org/wiki/File:Batumi_panorama.webp',
+				fileUrl: 'https://upload.wikimedia.org/Batumi_panorama.webp',
+			}), { status: 200, headers: { 'content-type': 'application/json' } });
+		});
+		vi.stubGlobal('fetch', convertedFetch);
+
+		addFiles([makeFile('Batumi panorama.HEIC')]);
+		entries[0].categories = ['Panoramas of Batumi'];
+		startUploads('Vitaly Zdanevich', '', []);
+		await vi.waitFor(() => expect(entries[0].status).toBe('done'));
+
+		expect(convertedFetch).toHaveBeenCalledWith('https://converter.test/convert', expect.objectContaining({ method: 'POST' }));
+		expect(entries[0].finalName).toBe('Batumi panorama.webp');
+		expect(upload).not.toHaveBeenCalled();
 	});
 });
 
@@ -199,6 +232,38 @@ describe('interruptions', () => {
 		expect(entries[0].status).toBe('done');
 	});
 
+	it('converter busy response waits and retries the original file', async () => {
+		vi.useFakeTimers();
+		savePrefs({ conversionUrl: 'https://converter.test/convert' });
+		upsertAccount({
+			username: 'U',
+			accessToken: 'ACCESS_TOKEN',
+			refreshToken: 'REFRESH_TOKEN',
+			expiresAt: Date.now() + 60 * 60 * 1000,
+		});
+		const convertedFetch = vi.fn()
+			.mockResolvedValueOnce(new Response(JSON.stringify({ error: 'busy' }), {
+				status: 429,
+				headers: { 'content-type': 'application/json', 'retry-after': '1' },
+			}))
+			.mockResolvedValueOnce(new Response(JSON.stringify({
+				fileName: 'Clip.webm',
+				pageUrl: 'https://commons.wikimedia.org/wiki/File:Clip.webm',
+				fileUrl: 'https://upload.wikimedia.org/Clip.webm',
+			}), { status: 200, headers: { 'content-type': 'application/json' } }));
+		vi.stubGlobal('fetch', convertedFetch);
+		addFiles([makeFile('Clip.mp4')]);
+		startUploads('U', '', []);
+
+		await vi.advanceTimersByTimeAsync(0);
+		expect(entries[0].status).toBe('pending');
+		expect(entries[0].progressText).toContain('rate-limited');
+
+		await vi.advanceTimersByTimeAsync(60_000);
+		expect(entries[0].status).toBe('done');
+		expect(convertedFetch).toHaveBeenCalledTimes(2);
+	});
+
 	it('restoreFromDb continues an interrupted upload from the saved offset', async () => {
 		const file = makeFile('Boulevard.jpg', 3000);
 		vi.mocked(dbAll).mockResolvedValueOnce([
@@ -220,11 +285,12 @@ describe('interruptions', () => {
 				offset: 1024,
 				filekey: 'FK',
 				viaLambda: false,
-			} as Entry,
+			} as unknown as Entry,
 		]);
 
 		await restoreFromDb();
 		expect(entries[0].status).toBe('pending');
+		expect(entries[0].viaConversion).toBe(false);
 
 		resume();
 		await vi.waitFor(() => expect(entries[0].status).toBe('done'));

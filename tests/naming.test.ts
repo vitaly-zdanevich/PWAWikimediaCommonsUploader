@@ -63,8 +63,11 @@ describe('needsPrefix', () => {
 });
 
 describe('requiresConversion', () => {
-	it('routes HEIC and H.264/H.265 containers to the conversion endpoint', () => {
+	it('routes unsupported images and H.264/H.265 containers to the conversion endpoint', () => {
 		expect(requiresConversion('a.heic')).toBe(true);
+		expect(requiresConversion('a.AVIF')).toBe(true);
+		expect(requiresConversion('a.dng')).toBe(true);
+		expect(requiresConversion('a.bmp')).toBe(true);
 		expect(requiresConversion('a.MOV')).toBe(true);
 		expect(requiresConversion('a.mp4')).toBe(true);
 	});

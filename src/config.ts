@@ -12,6 +12,9 @@ export const WDQS_URL = 'https://query.wikidata.org/sparql';
 // Can also be set at runtime in Preferences without rebuilding.
 export const DEFAULT_OAUTH_CLIENT_ID = '2260471694b45464c738bf0a5f4fe830';
 
+// Override in Preferences when deploying the converter under another tool name.
+export const DEFAULT_CONVERSION_URL = 'https://pwa-commons-uploader.toolforge.org/convert';
+
 export const PWA_CATEGORY = 'Uploaded by PWA from Vitaly Zdanevich';
 
 // hidden maintenance category added by Namify, so coordinate-named files stay findable
@@ -27,7 +30,10 @@ export const APP_VERSION = __APP_VERSION__;
 // points to our section on Commons:Upload tools, which links to the app
 export const UPLOAD_COMMENT = `[[Commons:Upload tools#Progressive Web Apps|Uploaded by PWA from Vitaly Zdanevich]] (v${APP_VERSION})`;
 
-// Extensions Wikimedia Commons rejects: routed to the conversion endpoint (AWS Lambda).
+// Image/video extensions Wikimedia Commons rejects: routed to the Toolforge converter.
 export const CONVERT_EXTENSIONS = [
-	'heic', 'heif', 'mp4', 'mov', 'm4v', '3gp', 'avi', 'mkv', 'mts', 'm2ts', 'wmv',
+	'arw', 'avif', 'bmp', 'cr2', 'cr3', 'dng', 'heic', 'heif', 'jxl', 'nef', 'orf', 'pbm', 'pef',
+	'pgm', 'ppm', 'psd', 'raf', 'rw2', 'tga',
+	'3g2', '3gp', 'asf', 'avi', 'flv', 'm2ts', 'm4v', 'mkv', 'mov', 'mp4', 'mts', 'mxf', 'qt',
+	'rm', 'rmvb', 'ts', 'vob', 'wmv',
 ];
