@@ -23,14 +23,14 @@ import { openNearby } from './nearby';
 let prefix = '';
 let globalCats: string[] = [];
 
-// categories near the photos' EXIF position, proposed as one-tap chips
+// categories near the first new photo's EXIF position, proposed as one-tap chips
 let exifSuggestions: NearbyCategory[] = [];
 let exifSuggKey = '';
 let suggRow: HTMLElement | null = null;
 let catInputRef: { refresh(): void } | null = null;
 
-function firstNewGpsEntry(): Entry | undefined {
-	return entries.find((e) => e.status === 'new' && e.lat !== undefined && e.lon !== undefined);
+function firstNewPhoto(): Entry | undefined {
+	return entries.find((e) => e.status === 'new');
 }
 
 function addGlobalCat(c: string): void {
@@ -58,7 +58,7 @@ function renderSuggRow(): void {
 }
 
 async function refreshExifSuggestions(): Promise<void> {
-	const e = firstNewGpsEntry();
+	const e = firstNewPhoto();
 	if (!e || e.lat === undefined || e.lon === undefined) {
 		exifSuggestions = [];
 		exifSuggKey = '';
@@ -447,7 +447,7 @@ export function renderFiles(): HTMLElement {
 			'Categories',
 			catInput.root,
 			el('button', { type: 'button', class: 'btn small', onclick: () => {
-				const gps = firstNewGpsEntry();
+				const gps = firstNewPhoto();
 				openNearby({
 					has: (c) => globalCats.some((x) => x.toLowerCase() === c.toLowerCase()),
 					add: (c) => {

@@ -35,7 +35,7 @@ conversion endpoint for formats Commons rejects).
 - Per-file optional name, description, license and categories; global categories and file-name prefix
 - Category autocompletion (your saved categories + Commons prefix search); a click on an added category chip opens it on Commons
 - 📍 Nearby: finds the closest Commons categories via Wikidata (geolocation), with direction arrow and distance in meters, ordered by distance
-- Newly added photos with EXIF GPS automatically propose the closest available categories within 25 km as one-tap chips, and 📍 Nearby uses the photo location instead of the device location when available
+- When photos are added, EXIF GPS from the first photo alone proposes the closest available categories within 25 km as one-tap chips; 📍 Nearby uses that same location when available
 - ✨ Namify: renames all GPS-tagged files to `2026july_46_54_76_to_26_55_56_iphone7plus`
   (date, coordinates and camera from EXIF), adds "Feel free to rename to something
   more descriptive." to the description, and files them into the hidden
