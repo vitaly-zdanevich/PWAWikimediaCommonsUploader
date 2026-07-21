@@ -29,6 +29,7 @@ conversion endpoint for formats Commons rejects).
 
 - OAuth 2.0 login (PKCE, no server), multiple accounts with switching
 - Select many images/videos, or take a photo/video with the camera (iOS and Android)
+- JPEG filenames use the shorter `.jpg` extension in the UI and on Commons
 - Receive photos shared from other apps: on Android the installed PWA appears in the
   system share sheet; iOS never lets PWAs into its share sheet, so there use
   Photos → Copy → 📋 Paste (also Ctrl/Cmd+V on desktop)

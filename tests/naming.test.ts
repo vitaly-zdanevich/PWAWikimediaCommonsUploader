@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { buildFinalName, namifyBase, needsPrefix, requiresConversion, sanitizeFileName, splitExt } from '../src/naming';
+import { buildFinalName, namifyBase, needsPrefix, normalizeJpegExtension, requiresConversion, sanitizeFileName, splitExt } from '../src/naming';
 
 describe('splitExt', () => {
 	it('splits a normal extension', () => {
@@ -20,6 +20,12 @@ describe('buildFinalName', () => {
 	});
 	it('does not double the extension when the custom name includes it', () => {
 		expect(buildFinalName('', 'Sunset.JPG', 'a.jpg')).toBe('Sunset.jpg');
+	});
+	it('uses .jpg instead of .jpeg', () => {
+		expect(normalizeJpegExtension('Sunset.JPEG')).toBe('Sunset.jpg');
+		expect(buildFinalName('', '', 'Sunset.jpeg')).toBe('Sunset.jpg');
+		expect(buildFinalName('', 'Evening.jpeg', 'IMG_1.JPEG')).toBe('Evening.jpg');
+		expect(buildFinalName('', 'Evening.jpg', 'IMG_1.jpeg')).toBe('Evening.jpg');
 	});
 	it('replaces characters MediaWiki forbids', () => {
 		expect(buildFinalName('', 'a:b/c#d', 'x.png')).toBe('a-b-c-d.png');

@@ -6,6 +6,10 @@ export function splitExt(name: string): { base: string; ext: string } {
 	return { base: name.slice(0, m.index), ext: m[0] };
 }
 
+export function normalizeJpegExtension(name: string): string {
+	return name.replace(/\.jpeg$/i, '.jpg');
+}
+
 /** Characters MediaWiki forbids in titles are replaced with '-'. */
 export function sanitizeFileName(name: string): string {
 	return name
@@ -14,11 +18,13 @@ export function sanitizeFileName(name: string): string {
 		.trim();
 }
 
-/** Final Commons name: prefix + (custom name | original base) + original extension. */
+/** Final Commons name: prefix + (custom name | original base) + normalized original extension. */
 export function buildFinalName(prefix: string, customName: string, origName: string): string {
-	const { base: origBase, ext } = splitExt(origName);
+	const { base: origBase, ext } = splitExt(normalizeJpegExtension(origName));
 	let base = customName.trim() || origBase;
-	if (ext && base.toLowerCase().endsWith(ext.toLowerCase())) base = base.slice(0, base.length - ext.length);
+	const suffixes = ext.toLowerCase() === '.jpg' ? ['.jpeg', '.jpg'] : [ext.toLowerCase()];
+	const includedExt = suffixes.find((suffix) => suffix && base.toLowerCase().endsWith(suffix));
+	if (includedExt) base = base.slice(0, base.length - includedExt.length);
 	return sanitizeFileName(prefix + base) + ext;
 }
 

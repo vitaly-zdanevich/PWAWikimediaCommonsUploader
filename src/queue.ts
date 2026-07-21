@@ -4,7 +4,7 @@ import { CHUNK_SIZE, PWA_CATEGORY, UPLOAD_COMMENT } from './config';
 import { readJpegMeta } from './exif';
 import { dbAll, dbDelete, dbPut } from './idb';
 import { keepAwake } from './keepawake';
-import { buildFinalName, requiresConversion } from './naming';
+import { buildFinalName, normalizeJpegExtension, requiresConversion } from './naming';
 import { ensureFresh, randomId } from './oauth';
 import { getAccount, getPrefs, rememberCategories, rememberPrefix } from './prefs';
 import type { Entry } from './types';
@@ -31,7 +31,7 @@ export function addFiles(files: ArrayLike<File>): void {
 			id: `${Date.now().toString(36)}-${randomId(4)}`,
 			seq: ++seq,
 			file: f,
-			origName: f.name,
+			origName: normalizeJpegExtension(f.name),
 			size: f.size,
 			lastModified: f.lastModified,
 			customName: '',

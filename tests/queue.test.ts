@@ -90,6 +90,17 @@ describe('queue happy path', () => {
 		expect(lastPut.status).toBe('done');
 		expect(lastPut.file).toBeNull();
 	});
+
+	it('shows and uploads JPEG extensions as .jpg', async () => {
+		addFiles([makeFile('Batumi sunset.JPEG')]);
+		expect(entries[0].origName).toBe('Batumi sunset.jpg');
+
+		startUploads('Vitaly Zdanevich', '', []);
+		await vi.waitFor(() => expect(entries[0].status).toBe('done'));
+
+		expect(upload.mock.calls[0][0].fileName).toBe('Batumi sunset.jpg');
+		expect(publish.mock.calls[0][0].fileName).toBe('Batumi sunset.jpg');
+	});
 });
 
 describe('name conflicts', () => {
