@@ -324,6 +324,16 @@ button.sugg {
 	padding: 6px 0 4px;
 }
 
+.edit-preview {
+	display: block;
+	width: 100%;
+	height: auto;
+	max-height: 70vh;
+	object-fit: contain;
+	background: var(--chip);
+	margin: 0 0 10px;
+}
+
 .copybar {
 	display: flex;
 	gap: 8px;

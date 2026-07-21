@@ -113,6 +113,30 @@ let copyBar: HTMLElement | null = null;
 let uploadBtn: HTMLButtonElement | null = null;
 let validation: HTMLElement | null = null;
 
+const IMAGE_NAME = /\.(?:avif|bmp|gif|heic|heif|jpe?g|jxl|png|svg|tiff?|webp)$/i;
+
+function localImageUrl(e: Entry): string | undefined {
+	if (!e.file || (!e.file.type.startsWith('image/') && !IMAGE_NAME.test(e.origName))) return undefined;
+	let url = thumbUrls.get(e.id);
+	if (!url) {
+		url = URL.createObjectURL(e.file);
+		thumbUrls.set(e.id, url);
+	}
+	return url;
+}
+
+function editImageUrl(e: Entry): string | undefined {
+	const local = localImageUrl(e);
+	if (local) return local;
+	if (!IMAGE_NAME.test(e.origName)) return undefined;
+	const stale = thumbUrls.get(e.id);
+	if (stale) {
+		URL.revokeObjectURL(stale);
+		thumbUrls.delete(e.id);
+	}
+	return e.fileUrl;
+}
+
 function statusText(e: Entry): string {
 	switch (e.status) {
 		case 'new': return '·';
@@ -215,6 +239,16 @@ function renderRow(e: Entry): HTMLElement {
 	syncNameWarning(refs, e);
 
 	const details = el('div', { class: 'details', hidden: true });
+	const editPreviewUrl = editImageUrl(e);
+	if (editPreviewUrl) {
+		details.append(el('img', {
+			class: 'edit-preview',
+			src: editPreviewUrl,
+			alt: `Preview of ${e.origName}`,
+			loading: 'lazy',
+			decoding: 'async',
+		}));
+	}
 	editBtn.addEventListener('click', () => (details.hidden = !details.hidden));
 	removeBtn.addEventListener('click', () => {
 		const u = thumbUrls.get(e.id);
@@ -271,12 +305,8 @@ function renderRow(e: Entry): HTMLElement {
 
 	let thumb: HTMLElement | null = null;
 	if (prefs.showThumbs && e.file && e.file.type.startsWith('image/')) {
-		let u = thumbUrls.get(e.id);
-		if (!u) {
-			u = URL.createObjectURL(e.file);
-			thumbUrls.set(e.id, u);
-		}
-		thumb = el('img', { class: 'thumb', src: u, alt: '', loading: 'lazy' });
+		const url = localImageUrl(e);
+		if (url) thumb = el('img', { class: 'thumb', src: url, alt: '', loading: 'lazy' });
 	}
 
 	if (thumb) root.append(thumb);
@@ -435,7 +465,14 @@ export function renderFiles(): HTMLElement {
 		{ class: 'copybar' },
 		copyButton('Copy direct URLs', () => doneEntries().map((e) => e.fileUrl).filter(Boolean).join('\n')),
 		copyButton('Copy page URLs', () => doneEntries().map((e) => e.pageUrl).filter(Boolean).join('\n')),
-		el('button', { type: 'button', class: 'btn', onclick: clearFinished }, 'Clear finished'),
+		el('button', { type: 'button', class: 'btn', onclick: () => {
+			for (const e of doneEntries()) {
+				const url = thumbUrls.get(e.id);
+				if (url) URL.revokeObjectURL(url);
+				thumbUrls.delete(e.id);
+			}
+			clearFinished();
+		} }, 'Clear finished'),
 	);
 	refreshCopyBar();
 	refreshUploadBtn();
