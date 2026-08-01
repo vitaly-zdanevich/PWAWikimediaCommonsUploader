@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { buildFinalName, namifyBase, needsPrefix, normalizeJpegExtension, requiresConversion, sanitizeFileName, splitExt } from '../src/naming';
+import { buildFinalName, conversionOutputName, namifyBase, needsPrefix, normalizeJpegExtension, requiresConversion, sanitizeFileName, splitExt } from '../src/naming';
 
 describe('splitExt', () => {
 	it('splits a normal extension', () => {
@@ -29,6 +29,17 @@ describe('buildFinalName', () => {
 	});
 	it('replaces characters MediaWiki forbids', () => {
 		expect(buildFinalName('', 'a:b/c#d', 'x.png')).toBe('a-b-c-d.png');
+	});
+});
+
+describe('conversionOutputName', () => {
+	it('shows iOS MOV files with the WebM output extension', () => {
+		expect(conversionOutputName('Clip.MOV')).toBe('Clip.webm');
+		expect(conversionOutputName('Clip.mov')).toBe('Clip.webm');
+	});
+
+	it('leaves other filenames unchanged', () => {
+		expect(conversionOutputName('Photo.heic')).toBe('Photo.heic');
 	});
 });
 

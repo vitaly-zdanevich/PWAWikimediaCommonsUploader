@@ -1,5 +1,5 @@
 import { fetchClosestCategories, formatDistance, type NearbyCategory } from '../geo';
-import { buildFinalName, namifyBase, needsPrefix } from '../naming';
+import { buildFinalName, conversionOutputName, namifyBase, needsPrefix } from '../naming';
 import { rerender } from './app';
 import { getActiveAccount, getPrefs } from '../prefs';
 import { NAMIFY_CATEGORY } from '../config';
@@ -149,8 +149,10 @@ function statusText(e: Entry): string {
 
 function displayName(e: Entry): string {
 	// error rows preview with the live prefix — that is what Retry will upload
-	if (e.status !== 'error' && e.finalName) return e.finalName;
-	return buildFinalName(prefix, e.customName, e.origName);
+	const name = e.status !== 'error' && e.finalName
+		? e.finalName
+		: buildFinalName(prefix, e.customName, e.origName);
+	return e.viaConversion ? conversionOutputName(name) : name;
 }
 
 function setName(refs: RowRefs, e: Entry): void {

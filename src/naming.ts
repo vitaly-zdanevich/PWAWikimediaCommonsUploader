@@ -10,6 +10,11 @@ export function normalizeJpegExtension(name: string): string {
 	return name.replace(/\.jpeg$/i, '.jpg');
 }
 
+/** Known output filename used while the converter is still processing a file. */
+export function conversionOutputName(name: string): string {
+	return name.replace(/\.mov$/i, '.webm');
+}
+
 /** Characters MediaWiki forbids in titles are replaced with '-'. */
 export function sanitizeFileName(name: string): string {
 	return name
