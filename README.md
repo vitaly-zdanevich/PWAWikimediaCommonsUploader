@@ -206,6 +206,19 @@ normal navigation, but storage may be isolated from your regular browser, so you
 sign in once inside Telegram too; iOS Telegram may not keep long uploads running in
 the background as reliably as the installed PWA.
 
+## My other Wikimedia-related projects
+
+- **[wikimedia_commons_pwa_viewer](https://github.com/vitaly-zdanevich/wikimedia_commons_pwa_viewer)** —
+  minimal PWA for browsing Wikimedia Commons images by feed, category, search, or
+  location ([open the app](https://vitaly-zdanevich.github.io/wikimedia_commons_pwa_viewer/))
+- [bot_telegram_wikimedia_commons_uploader](https://github.com/vitaly-zdanevich/bot_telegram_wikimedia_commons_uploader) —
+  Telegram bot that uploads images and media to Wikimedia Commons under each
+  user's own account
+- [bot_telegram_wikimedia_commons](https://github.com/vitaly-zdanevich/bot_telegram_wikimedia_commons) —
+  Telegram and CLI bot for searching Wikimedia Commons media
+- [bot_telegram_wikipedia](https://github.com/vitaly-zdanevich/bot_telegram_wikipedia) —
+  Telegram bot for Wikipedia search
+
 ## Rate limits
 
 Commons allows regular users **380 upload API requests per 72 minutes** (each 16 MB
